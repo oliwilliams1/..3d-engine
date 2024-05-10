@@ -1,0 +1,12 @@
+# Blender 3.4.1 MTL File: 'None'
+# www.blender.org
+
+newmtl 20430_Cat
+Ns 51.000004
+Ka 1.000000 1.000000 1.000000
+Ks 0.207000 0.207000 0.207000
+Ke 0.700000 0.700000 0.700000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd 20430_cat_diff_v1.jpg

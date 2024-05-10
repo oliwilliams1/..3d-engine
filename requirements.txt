@@ -1,0 +1,11 @@
+moderngl
+numpy
+PyGLM
+pywavefront
+cython
+pillow
+setuptools
+glfw
+imgui
+pyopengl
+pyyaml
