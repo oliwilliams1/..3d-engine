@@ -4,7 +4,7 @@ import object_loader
 import material_loader
 import glm
 from PIL import Image
-import struct
+
 obj_loader = object_loader.ObjectLoader()
 loaded_objects = obj_loader.retrieveObjects()
 
@@ -86,6 +86,7 @@ class Texture:
     def __init__(self, app):
         self.app = app
         self.ctx = app.ctx
+        self.shadow_res = 1024
         self.textures = {}
         self.textures[0] = self.get_texture(path=f'{script_path}/textures/img.png')
         self.textures[1] = self.get_texture(path=f'{script_path}/textures/img_1.png')
@@ -99,7 +100,7 @@ class Texture:
         
         
     def get_depth_texture(self):
-        depth_texture = self.ctx.depth_texture((2048, 2048))
+        depth_texture = self.ctx.depth_texture((self.shadow_res, self.shadow_res))
         depth_texture.repeat_x = False
         depth_texture.repeat_y = False
         return depth_texture

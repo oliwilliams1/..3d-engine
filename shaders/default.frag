@@ -33,7 +33,7 @@ uniform Sun sun;
 uniform sampler2D diff_0;
 uniform vec3 camPos;
 uniform sampler2DShadow shadowMap;
-uniform vec2 u_resolution;
+uniform vec2 shadow_map_res;
 uniform vec4 norm_rough_metal_height_values;
 uniform Material maps;
 uniform vec2 mat_values;
@@ -41,25 +41,19 @@ uniform samplerCube u_irradiance;
 uniform samplerCube u_reflection;
 uniform sampler2D u_brdf_lut;
 const float PI = 3.14159265359;
+const float MAX_REFLECTION_LOD = 7;
 
 float lookup(float ox, float oy) {
-    vec2 pixelOffset = 1 / u_resolution;
+    vec2 pixelOffset = 1 / shadow_map_res/1.5; // divided by 1.5 for sharper shadows
     return textureProj(shadowMap, shadowCoord + vec4(ox * pixelOffset.x * shadowCoord.w,
                                                      oy * pixelOffset.y * shadowCoord.w, 0.0, 0.0));
 }
 
-float getSoftShadowX4() {
-    float shadow;
-    float swidth = 1.5;  // shadow spread
-    vec2 offset = mod(floor(gl_FragCoord.xy), 2.0) * swidth;
-    shadow += lookup(-1.5 * swidth + offset.x, 1.5 * swidth - offset.y);
-    shadow += lookup(-1.5 * swidth + offset.x, -0.5 * swidth - offset.y);
-    shadow += lookup( 0.5 * swidth + offset.x, 1.5 * swidth - offset.y);
-    shadow += lookup( 0.5 * swidth + offset.x, -0.5 * swidth - offset.y);
-    return shadow / 4.0;
-}
-
-float getSoftShadowX16() {
+float getShadow() { // pcf
+    if (shadowCoord.x < 0.0 || shadowCoord.x > 1.0 || shadowCoord.y < 0.0 || shadowCoord.y > 1.0 || shadowCoord.z < 0.0 || shadowCoord.z > 1.0) {
+        // if sampled point is outside the shadow map, consider it fully lit
+        return 1.0;
+    }
     float shadow;
     float swidth = 1;
     float endp = swidth * 1.5;
@@ -71,31 +65,13 @@ float getSoftShadowX16() {
     return shadow / 16;
 }
 
-float getSoftShadowX64() {
-    float shadow;
-    float swidth = 0.6;
-    float endp = swidth * 3.0 + swidth / 2.0;
-    for (float y = -endp; y <= endp; y += swidth) {
-        for (float x = -endp; x <= endp; x += swidth) {
-            shadow += lookup(x, y);
-        }
-    }
-    return shadow / 64;
-}
-
-float getShadow() {
-    float shadow = textureProj(shadowMap, shadowCoord);
-    return shadow;
-}
-
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
     float a = roughness * roughness;
     float a2 = a * a;
     float NdotH = max(dot(N, H), 0.0);
-    float NdotH2 = NdotH * NdotH;
 
-    float denom = NdotH2 * (a2 - 1.0) + 1.0;
-    return a2 / (3.14159 * denom * denom);
+    float denom = NdotH * NdotH * (a2 - 1.0) + 1.0;
+    return a2 / (PI * denom * denom);
 }
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
@@ -105,10 +81,9 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
 vec3 getLight(vec3 Normal, float roughness, float metallicness) {
     vec3 viewDir = normalize(camPos - fragPos);
 
-    // Calculate the reflectance based on the roughness and metallicness
+    // calculate the reflectance based on the roughness and metallicness
     vec3 reflectance = mix(vec3(0.04), vec3(0.5), metallicness);
 
-    // Calculate the specular contribution using the Cook-Torrance BRDF
     vec3 specular = vec3(0.0);
     for (int i = 0; i < numLights; i++) {
         vec3 lightDir = normalize(static_lights[i].position - fragPos);
@@ -139,13 +114,9 @@ vec3 getLight(vec3 Normal, float roughness, float metallicness) {
         // Calculate distance between fragment and light source
         float distance = length(static_lights[i].position - fragPos);
 
-        // Apply range-based attenuation
+        // Calculate and apply attenuation based on distance
         float attenuation = smoothstep(static_lights[i].range, 0.0, distance);
-
-        // Apply attenuation to diffuse calculation
         vec3 diffuseContrib = diff * static_lights[i].colour * static_lights[i].intensity * attenuation;
-
-        // Mix diffuse and specular based on metallicness
         vec3 finalContrib = mix(diffuseContrib, specular, metallicness);
 
         diffuse += finalContrib;
@@ -158,15 +129,15 @@ vec3 getSunLight(vec3 Normal, float roughness, float metallicness) {
 
     vec3 sunAmbient = sun.Ia;
 
-    // diffuse
+    // Diffuse
     vec3 lightDir = normalize(sun.direction);
     float diff = max(0.0, dot(lightDir, Normal));
     vec3 sunDiffuse = diff * sun.Id;
 
-    // reflectance based off metalicness
+    // Reflectance based off metalicness
     vec3 reflectance = mix(vec3(0.04), vec3(0.5), metallicness);
 
-    // specular
+    // Specular
     vec3 viewDir = normalize(camPos - fragPos);
     vec3 halfwayDir = normalize(viewDir + lightDir);
 
@@ -182,8 +153,8 @@ vec3 getSunLight(vec3 Normal, float roughness, float metallicness) {
     vec3 specularContrib = (D * F * G) / (4.0 * NdotL * NdotV + 0.001);
     vec3 sunSpecular = specularContrib * sun.Is;
 
-    // shadow
-    float shadow = getSoftShadowX16();
+    // Shadow
+    float shadow = getShadow();
 
     vec3 sunLight = sunAmbient + (sunDiffuse + sunSpecular) * shadow;
 
@@ -216,28 +187,26 @@ void main() {
     float other_roughness = clamp(roughness, 0.01, 0.99);
     roughness = clamp(other_roughness, 0.05, 0.99);
     
-    vec3 viewDir = normalize(camPos - fragPos); // valc view direction
+    vec3 viewDir = normalize(camPos - fragPos); // Calc view direction
 
     vec3 baseReflectivity = vec3(0.04);
     baseReflectivity = mix(baseReflectivity, albedo, metallicness);
 
     float NdotV = max(0.0, dot(N, viewDir));
-    vec3 sunLight = getSunLight(N, roughness, metallicness); // sun light contrib
-    vec3 pointLights = getLight(N, roughness, metallicness); // point light contrib
+    vec3 sunLight = getSunLight(N, roughness, metallicness); // Sun light contrib
+    vec3 pointLights = getLight(N, roughness, metallicness); // Point light contrib
 
     vec3 F = fresnelSchlickRoughness(NdotV, baseReflectivity, roughness);
     vec3 kD = (1.0 - F);
     vec3 diffuse = texture(u_irradiance, N).rgb * albedo * kD;
-
-    const float MAX_REFLECTION_LOD = 7;
 
     vec3 brdf = texture(u_brdf_lut, vec2(clamp(NdotV, 0.01, 0.99), roughness)).rgb;
     vec3 prefilteredColour = textureLod(u_reflection, reflect(-viewDir, N), brdf.b * MAX_REFLECTION_LOD).rgb * F;
     vec3 specular = prefilteredColour * (F * brdf.r + brdf.g);
 
     vec3 ambient = diffuse + specular;
-    vec3 colour = ambient * (sunLight + pointLights); // adding all colours together
+    vec3 colour = ambient * (sunLight + pointLights);
 
-    colour = pow(colour, vec3(1.0 / gamma)); // gamma correction
+    colour = pow(colour, vec3(1.0 / gamma)); // Gamma correction
     fragcolour = vec4(colour, 1.0);
 }

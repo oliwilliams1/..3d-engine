@@ -24,7 +24,8 @@ def load_scene_objects():
             'material': str(attributes['material']),
             'pos': tuple(attributes['position']),
             'rot': tuple(attributes['rotation']),
-            'scale': tuple(attributes['scale'])
+            'scale': tuple(attributes['scale']),
+            'cast_shadow': bool(attributes['cast_shadow'])
         }
         scene_objects.append(temp_obj)
 
@@ -62,8 +63,9 @@ class Scene:
             object_pos = obj['pos']
             object_rot = obj['rot']
             object_scale = obj['scale']
+            cast_shadow = obj['cast_shadow']
 
-            add(models[object_name](app, tex_id=object_material, pos=object_pos, rot=object_rot, scale=object_scale, display_name=display_name))
+            add(models[object_name](app, tex_id=object_material, pos=object_pos, rot=object_rot, scale=object_scale, display_name=display_name, cast_shadow=cast_shadow))
 
         #n, s = 10, 2
         #for x in range(-n, n, s):

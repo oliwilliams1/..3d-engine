@@ -47,14 +47,14 @@ def update_camera_vectors():
 
 
 class imGuiRenderer:
-    def __init__(self, window, scene_handler, material_handler, cube_renderer,):
-        self.window = window
+    def __init__(self, app):
+        self.window = app.window
         imgui.create_context()
         self.imgui_renderer = GlfwRenderer(self.window)
-        self.scene_handler = scene_handler
+        self.scene_handler = app.scene
         self.selected_object = ['None', 'grr']
         self.scene_objects = None
-        self.material_handler = material_handler
+        self.material_handler = app.material_class
         self.loaded_materials = [i for i in self.material_handler.materials]
         self.selected_albedo_tex = None
         self.selected_normal_tex = None
@@ -62,8 +62,10 @@ class imGuiRenderer:
         self.selected_metallic_value = None
         self.material_or_cubemap = 0
         self.selected_material = 0
+        self.texture_handler = app.mesh.texture
+        self.light_handler = app.light
 
-        self.cube_renderer = cube_renderer
+        self.cube_renderer = app.scene_renderer.render_cube
 
         self.tab_names = ['Materials', 'Cubemap Editor']
         self.current_tab = 0
@@ -96,6 +98,10 @@ class imGuiRenderer:
         self.render_cubemap_editor()
         imgui.end()
 
+        imgui.begin('Shadow Viewer', flags=imgui.WINDOW_NO_RESIZE | imgui.WINDOW_NO_COLLAPSE)
+        imgui.image(self.texture_handler.textures['depth_texture'].glo, 275, 275)
+        imgui.end()
+
         '''imgui.begin('camera')
         self.camera.yaw = cam_yaw
         self.camera.pitch = cam_pitch
@@ -109,6 +115,11 @@ class imGuiRenderer:
         self.imgui_renderer.shutdown()
     
     def render_hierarchy(self):
+        selected, _ = imgui.selectable('Sun', selected=self.selected_object[0] == '#1457Sun')
+        if selected:
+            self.selected_object = ['#1457Sun', None]
+            print(f'Selected object: {self.selected_object} index: None')
+    
         for i, obj in enumerate(self.scene_objects):
             selected, _ = imgui.selectable(obj.display_name, selected=obj.display_name == self.selected_object[0])
             if selected:
@@ -116,7 +127,21 @@ class imGuiRenderer:
                 print(f'Selected object: {self.selected_object} index: {i}')
     
     def render_object_properties(self):
-        if self.selected_object[1] != 'grr':
+        if self.selected_object[0] == '#1457Sun':
+            imgui.columns(2)
+            imgui.set_column_width(0, imgui.get_window_width() * 0.4)
+            imgui.text('Direction:')
+            imgui.next_column()
+            imgui.push_item_width(-1)
+            sun_dir = self.light_handler.sun.unormalized_direction
+            sun_direction = imgui.drag_float3('   Direction', sun_dir[0], sun_dir[1], sun_dir[2], 0.05, format='%.1f')
+            if sun_direction[0]:
+                self.light_handler.sun.unormalized_direction = sun_direction[1]
+                norm_sun_dir = glm.normalize(glm.vec3(sun_direction[1]))
+                self.light_handler.sun.direction = norm_sun_dir
+                self.light_handler.direction = norm_sun_dir
+
+        elif self.selected_object[1] != 'grr':
             obj = self.scene_objects[self.selected_object[1]]
 
             obj_pos = [obj.pos[0], obj.pos[1], obj.pos[2]]
@@ -124,8 +149,7 @@ class imGuiRenderer:
             obj_scale = [obj.scale[0], obj.scale[1], obj.scale[2]]
 
             imgui.columns(2)
-            column_width = imgui.get_window_width() * 0.3
-            imgui.set_column_width(0, column_width)
+            imgui.set_column_width(0, imgui.get_window_width() * 0.4)
 
             imgui.text('Position:')
             imgui.next_column() 
@@ -151,8 +175,17 @@ class imGuiRenderer:
             scale_drag = imgui.drag_float3('  Scale', obj_scale[0], obj_scale[1], obj_scale[2], scale_step, format='%.1f')
             slider_obj_scale = scale_drag[1]
             imgui.pop_item_width()
+
+            imgui.next_column()
+            imgui.text('Cast shadow: ')
+            imgui.next_column()
+            cast_shadow = imgui.checkbox('', obj.cast_shadow)
+
             imgui.columns(1)
 
+            if cast_shadow[0]:
+                obj.cast_shadow = cast_shadow[1]
+                
             if pos_drag[0] or rot_drag[0] or scale_drag[0]:
                 obj.pos = (slider_obj_pos[0], slider_obj_pos[1], slider_obj_pos[2])
                 obj.rot = slider_obj_rot

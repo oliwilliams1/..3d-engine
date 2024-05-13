@@ -89,12 +89,13 @@ class SceneRenderer:
         self.scene.skybox.on_init()       # to fix a bug, doesnt matter performance
         self.scene.basic_skybox.on_init() # wise, as not rendering real-time
 
-
     def render_shadow(self):
+        self.app.light.update_view_matrix(self.app.camera.position)
         self.depth_fbo.clear()
         self.depth_fbo.use()
         for obj in self.scene.objects:
-            obj.render_shadow()
+            if obj.cast_shadow:
+                obj.render_shadow()
 
     def render(self):
         self.scene.update()

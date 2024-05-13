@@ -90,7 +90,7 @@ def get_view_matrix(position, face):
     return m_view
 
 class BaseModel:
-    def __init__(self, app, vao_name, tex_id, pos=(0, 0, 0), rot=(0, 0, 0), scale=(1, 1, 1), display_name='Untitled Object'):
+    def __init__(self, app, vao_name, tex_id, pos=(0, 0, 0), rot=(0, 0, 0), scale=(1, 1, 1), display_name='Untitled Object', cast_shadow=True):
         self.app = app
         self.pos = pos
         self.vao_name = vao_name
@@ -108,6 +108,7 @@ class BaseModel:
             self.cube_vao = app.mesh.vao.vaos[f'{vao_name}_low']
         
         self.tex_id = tex_id
+        self.cast_shadow = cast_shadow
         self.program = self.vao.program
         self.camera = self.app.camera
 
@@ -134,8 +135,8 @@ class BaseModel:
         self.vao.render()
 
 class ExtendedBaseModel(BaseModel):
-    def __init__(self, app, vao_name, tex_id, pos, rot, scale, display_name):
-        super().__init__(app, vao_name, tex_id, pos, rot, scale, display_name)
+    def __init__(self, app, vao_name, tex_id, pos, rot, scale, display_name, cast_shadow):
+        super().__init__(app, vao_name, tex_id, pos, rot, scale, display_name, cast_shadow)
         self.cube_program = self.cube_vao.program # only for editor
         self.init_cubemap() # only for editor
         self.on_init()
@@ -143,6 +144,8 @@ class ExtendedBaseModel(BaseModel):
         self.iteras = 0
 
     def update(self):
+        self.program['sun.direction'].write(self.app.light.sun.direction)
+        self.program['m_view_light'].write(self.app.light.m_view_light)
         self.update_pbr_values()
         self.depth_texture.use(location=0) #-- fixes a weird bug with imgui, dont keep in final version?
         self.diffuse.use(location=1)
@@ -167,6 +170,7 @@ class ExtendedBaseModel(BaseModel):
         self.cube_vao.render()
 
     def update_shadow(self):
+        self.shadow_program['m_view_light'].write(self.app.light.m_view_light)
         self.shadow_program['m_model'].write(self.m_model)
 
     def render_shadow(self):
@@ -258,7 +262,7 @@ class ExtendedBaseModel(BaseModel):
 
         self.program['m_view_light'].write(self.app.light.m_view_light)
         # resolution
-        self.program['u_resolution'].write(glm.vec2(self.app.WIN_SIZE))
+        self.program['shadow_map_res'].write(glm.vec2(self.app.mesh.texture.shadow_res))
         # depth texture
         self.depth_texture = self.app.mesh.texture.textures['depth_texture']
         self.program['shadowMap'] = 0
@@ -266,7 +270,7 @@ class ExtendedBaseModel(BaseModel):
         # shadow
         self.shadow_vao = self.app.mesh.vao.vaos['shadow_' + self.vao_name]
         self.shadow_program = self.shadow_vao.program
-        self.shadow_program['m_proj'].write(self.camera.m_proj)
+        self.shadow_program['m_proj'].write(self.app.light.m_proj_light)
         self.shadow_program['m_view_light'].write(self.app.light.m_view_light)
         self.shadow_program['m_model'].write(self.m_model)
 
@@ -305,7 +309,7 @@ class ExtendedBaseModel(BaseModel):
         self.program['m_view'].write(self.camera.m_view)
         self.program['m_model'].write(self.m_model)
         # sun
-        #self.program['sun.position'].write(self.app.light.position)
+        self.program['m_proj_light'].write(self.app.light.m_proj_light)
         self.program['sun.direction'].write(self.app.light.sun.direction)
         self.program['sun.Ia'].write(self.app.light.sun.Ia)
         self.program['sun.Id'].write(self.app.light.sun.Id)

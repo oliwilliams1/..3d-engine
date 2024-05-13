@@ -66,7 +66,7 @@ class GraphicsEngine:
         self.mouse_delta = [0, 0]
         x, y = glfw.get_cursor_pos(self.window)
         self.mouse_pos = [x, y]
-        self.imgui_renderer = imGuiRenderer(self.window, self.scene, self.material_class, self.scene_renderer.render_cube)
+        self.imgui_renderer = imGuiRenderer(self)
         
         self.cube_map_render_data = {'rendering' : False,
                                      'camera_pos' : None,
