@@ -300,15 +300,6 @@ for obj in loaded_objects:
     attrs = {'vao_name': obj_name}
     models[obj_name] = create_static_custom_class(obj_name, ExtendedBaseModel, attrs)
 
-"""class Sphere(ExtendedBaseModel):
-    def __init__(self, app, vao_name='sphere', tex_id='sphere',
-                 pos=(0, 0, 0), rot=(0, 0, 0), scale=(1, 1, 1)):
-        super().__init__(app, vao_name, tex_id, pos, rot, scale)
-    
-    def update(self):
-        self.m_model = self.get_model_matrix()
-        super().update()"""
-
 class SkyBox(BaseModel):
     def __init__(self, app, vao_name='skybox', tex_id='skybox',
                  pos=(0, 0, 0), rot=(0, 0, 0), scale=(1, 1, 1),

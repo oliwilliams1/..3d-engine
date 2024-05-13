@@ -206,8 +206,7 @@ void main() {
         vec3 prefilteredColour = textureLod(u_reflection, reflect(-viewDir, N), brdf.b * MAX_REFLECTION_LOD).rgb * F;
         vec3 specular = prefilteredColour * (F * brdf.r + brdf.g);
 
-        vec3 ambient = diffuse + specular;
-        colour = ambient * (sunLight + pointLights);
+        colour = (diffuse + specular) * (sunLight + pointLights);
     } else {
         colour = albedo * (sunLight + pointLights);
     }
