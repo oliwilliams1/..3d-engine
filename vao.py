@@ -22,10 +22,6 @@ class VAO:
             self.vaos[f'shadow_{object_name}'] = self.get_vao(
                 program=self.program.programs['shadow_map'],
                 vbo=self.vbo.vbos[object_name])
-            
-            self.vaos[f'{object_name}_low'] = self.get_vao(
-                program=self.program.programs['default_low'],
-                vbo=self.vbo.vbos[object_name])
 
         # skybox vao
         self.vaos['skybox'] = self.get_vao(

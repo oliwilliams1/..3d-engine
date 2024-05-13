@@ -105,7 +105,6 @@ class BaseModel:
             self.bounding_box = obj_loader.getAABB(vao_name)
             self.bounding_box = min_max_to_bound(self.bounding_box)
             self.vao = app.mesh.vao.vaos[f'{vao_name}_high']
-            self.cube_vao = app.mesh.vao.vaos[f'{vao_name}_low']
         
         self.tex_id = tex_id
         self.cast_shadow = cast_shadow
@@ -137,8 +136,6 @@ class BaseModel:
 class ExtendedBaseModel(BaseModel):
     def __init__(self, app, vao_name, tex_id, pos, rot, scale, display_name, cast_shadow):
         super().__init__(app, vao_name, tex_id, pos, rot, scale, display_name, cast_shadow)
-        self.cube_program = self.cube_vao.program # only for editor
-        self.init_cubemap() # only for editor
         self.on_init()
         self.light1pos = 15
         self.iteras = 0
@@ -167,7 +164,8 @@ class ExtendedBaseModel(BaseModel):
 
     def render_cube(self, cam_pos, face):
         self.update_cubemap(cam_pos, face)
-        self.cube_vao.render()
+        self.vao.render()
+        self.undo_cupemap_updates()
 
     def update_shadow(self):
         self.shadow_program['m_view_light'].write(self.app.light.m_view_light)
@@ -181,81 +179,31 @@ class ExtendedBaseModel(BaseModel):
         self.norm_rough_metal_height_values = self.app.materials[self.tex_id].norm_rough_metal_height_values
         self.mat_values = glm.vec2(self.app.materials[self.tex_id].roughness_value, self.app.materials[self.tex_id].metalicness_value)
         self.uses_normal = self.app.materials[self.tex_id].norm_rough_metal_height_values.x
-    
+
+    def undo_cupemap_updates(self):
+        self.program['render_reflections'].value = 1
+        self.program['m_proj'].write(self.camera.m_proj)
+
     def update_cubemap(self, cam_pos, face):
         self.update_pbr_values()
         self.depth_texture.use(location=0)
         self.diffuse.use(location=1)
 
-        self.cube_program['norm_rough_metal_height_values'].write(self.norm_rough_metal_height_values)
-        self.cube_program['mat_values'].write(self.mat_values)
+        self.program['render_reflections'].value = 0
+
+        self.program['norm_rough_metal_height_values'].write(self.norm_rough_metal_height_values)
+        self.program['mat_values'].write(self.mat_values)
 
         if self.uses_normal:
             self.normal.use(location=2)
 
-        self.cube_program['camPos'].write(cam_pos)
-        self.cube_program['m_view'].write(get_view_matrix(self.app.camera.position, face))
-        self.cube_program['m_model'].write(self.m_model)
+        self.program['camPos'].write(cam_pos)
+        self.program['m_proj'].write(glm.perspective(glm.radians(90), 1, 0.1, 100))
+        self.program['m_view'].write(get_view_matrix(self.app.camera.position, face))
+        self.program['m_model'].write(self.m_model)
 
-    def init_cubemap(self):
-        self.update_pbr_values()
-        # number of lights
-        self.cube_program['numLights'].value = num_lights
-
-        self.cube_program['m_view_light'].write(self.app.light.m_view_light)
-        # resolution
-        self.cube_program['u_resolution'].write(glm.vec2(self.app.WIN_SIZE))
-        # depth texture
-        self.depth_texture = self.app.mesh.texture.textures['depth_texture']
-        self.cube_program['shadowMap'] = 0
-        self.depth_texture.use(location=0)
-        # shadow
-        self.shadow_vao = self.app.mesh.vao.vaos['shadow_' + self.vao_name]
-        self.shadow_program = self.shadow_vao.program
-        self.shadow_program['m_proj'].write(self.camera.m_proj)
-        self.shadow_program['m_view_light'].write(self.app.light.m_view_light)
-        self.shadow_program['m_model'].write(self.m_model)
-
-        # textures
-        self.diffuse = self.app.materials[self.tex_id].diffuse_tex
-        self.cube_program['diff_0'] = 1
-        self.diffuse.use(location=1)
-
-        #pbr values
-        self.cube_program['mat_values'].write(glm.vec2(self.app.materials[self.tex_id].roughness_value, self.app.materials[self.tex_id].metalicness_value))
-
-        #self.program['maps.is_normal_loaded'].value = 1
-
-        if self.app.materials[self.tex_id].has_normal:
-            self.normal = self.app.materials[self.tex_id].normal_tex
-            self.cube_program['maps.normal_0'] = 2
-            self.normal.use(location=2)
-
-        self.cube_program['norm_rough_metal_height_values'].write(self.app.materials[self.tex_id].norm_rough_metal_height_values)
-        # skybox
-        self.irradiance = self.app.mesh.texture.textures['irradiance']
-        self.cube_program['u_texture_skybox'] = 3
-        self.irradiance.use(location=3)       
-
-        # mvp
-        self.cube_program['m_shadow_proj'].write(self.app.camera.m_proj)
-        self.cube_program['m_proj'].write(glm.perspective(glm.radians(90), 1, 0.1, 100)) # cubemap projection
-        self.cube_program['m_view'].write(self.camera.m_view)
-        self.cube_program['m_model'].write(self.m_model)
-        # sun
-        self.cube_program['sun.direction'].write(self.app.light.sun.direction)
-        self.cube_program['sun.Ia'].write(self.app.light.sun.Ia)
-        self.cube_program['sun.Id'].write(self.app.light.sun.Id)
-        self.cube_program['sun.Is'].write(self.app.light.sun.Is)
-
-        # lights
-        for i, light in enumerate(lights):
-            self.cube_program[f'static_lights[{i}].position'].write(bytes(light['position']))
-            self.cube_program[f'static_lights[{i}].colour'].write(light['colour'])
-            self.cube_program[f'static_lights[{i}].intensity'].write(light['intensity'])
-            self.cube_program[f'static_lights[{i}].range'].write(light['range'])
-    
     def on_init(self):
+        self.program['render_reflections'].value = 1
         self.update_pbr_values()
         # number of lights
         self.program['numLights'].value = num_lights

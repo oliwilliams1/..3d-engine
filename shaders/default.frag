@@ -42,6 +42,7 @@ uniform samplerCube u_reflection;
 uniform sampler2D u_brdf_lut;
 const float PI = 3.14159265359;
 const float MAX_REFLECTION_LOD = 7;
+uniform int render_reflections;
 
 float lookup(float ox, float oy) {
     vec2 pixelOffset = 1 / shadow_map_res/1.5; // divided by 1.5 for sharper shadows
@@ -195,18 +196,22 @@ void main() {
     float NdotV = max(0.0, dot(N, viewDir));
     vec3 sunLight = getSunLight(N, roughness, metallicness); // Sun light contrib
     vec3 pointLights = getLight(N, roughness, metallicness); // Point light contrib
+    vec3 colour;
+    if (render_reflections == 1) {
+        vec3 F = fresnelSchlickRoughness(NdotV, baseReflectivity, roughness);
+        vec3 kD = (1.0 - F);
+        vec3 diffuse = texture(u_irradiance, N).rgb * albedo * kD;
 
-    vec3 F = fresnelSchlickRoughness(NdotV, baseReflectivity, roughness);
-    vec3 kD = (1.0 - F);
-    vec3 diffuse = texture(u_irradiance, N).rgb * albedo * kD;
+        vec3 brdf = texture(u_brdf_lut, vec2(clamp(NdotV, 0.01, 0.99), roughness)).rgb;
+        vec3 prefilteredColour = textureLod(u_reflection, reflect(-viewDir, N), brdf.b * MAX_REFLECTION_LOD).rgb * F;
+        vec3 specular = prefilteredColour * (F * brdf.r + brdf.g);
 
-    vec3 brdf = texture(u_brdf_lut, vec2(clamp(NdotV, 0.01, 0.99), roughness)).rgb;
-    vec3 prefilteredColour = textureLod(u_reflection, reflect(-viewDir, N), brdf.b * MAX_REFLECTION_LOD).rgb * F;
-    vec3 specular = prefilteredColour * (F * brdf.r + brdf.g);
-
-    vec3 ambient = diffuse + specular;
-    vec3 colour = ambient * (sunLight + pointLights);
-
+        vec3 ambient = diffuse + specular;
+        colour = ambient * (sunLight + pointLights);
+    } else {
+        colour = albedo * (sunLight + pointLights);
+    }
+    
     colour = pow(colour, vec3(1.0 / gamma)); // Gamma correction
     fragcolour = vec4(colour, 1.0);
 }
