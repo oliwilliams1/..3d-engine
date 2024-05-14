@@ -18,7 +18,7 @@ def init_lights():
     light1 = {
         'position': glm.vec3(-15, 15, -12),
         'colour': glm.vec3(1.0, 0.0, 0.0),
-        'intensity': struct.pack('f', 3.0),
+        'intensity': struct.pack('f', 2.0),
         'range': struct.pack('f', 10.0)
     }
     
@@ -26,14 +26,14 @@ def init_lights():
     light2 = {
         'position': glm.vec3(0, 15, -12),
         'colour': glm.vec3(0.0, 1.0, 0.0),
-        'intensity': struct.pack('f', 3.0),
+        'intensity': struct.pack('f', 2.0),
         'range': struct.pack('f', 10.0)
     }
 
     light3 = {
         'position': glm.vec3(15, 15, -12),
         'colour': glm.vec3(0.0, 0.0, 1.0),
-        'intensity': struct.pack('f', 3.0),
+        'intensity': struct.pack('f', 2.0),
         'range': struct.pack('f', 10.0)
     }
     
@@ -141,6 +141,7 @@ class ExtendedBaseModel(BaseModel):
         self.iteras = 0
 
     def update(self):
+        self.program['sun.colour'].write(self.app.light.sun.colour)
         self.program['sun.direction'].write(self.app.light.sun.direction)
         self.program['m_view_light'].write(self.app.light.m_view_light)
         self.update_pbr_values()
@@ -258,6 +259,7 @@ class ExtendedBaseModel(BaseModel):
         self.program['m_model'].write(self.m_model)
         # sun
         self.program['m_proj_light'].write(self.app.light.m_proj_light)
+        self.program['sun.colour'].write(self.app.light.sun.colour)
         self.program['sun.direction'].write(self.app.light.sun.direction)
         self.program['sun.Ia'].write(self.app.light.sun.Ia)
         self.program['sun.Id'].write(self.app.light.sun.Id)

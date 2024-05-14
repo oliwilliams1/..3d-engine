@@ -17,9 +17,10 @@ struct Light {
 
 struct Sun {
     vec3 direction;
-    vec3 Ia;
-    vec3 Id;
-    vec3 Is;
+    vec3 colour;
+    float Ia;
+    float Id;
+    float Is;
 };
 
 struct Material {
@@ -45,7 +46,7 @@ const float MAX_REFLECTION_LOD = 7;
 uniform int render_reflections;
 
 float lookup(float ox, float oy) {
-    vec2 pixelOffset = 1 / shadow_map_res/1.5; // divided by 1.5 for sharper shadows
+    vec2 pixelOffset = 1 / shadow_map_res; // divided by 1.5 for sharper shadows
     return textureProj(shadowMap, shadowCoord + vec4(ox * pixelOffset.x * shadowCoord.w,
                                                      oy * pixelOffset.y * shadowCoord.w, 0.0, 0.0));
 }
@@ -128,15 +129,12 @@ vec3 getLight(vec3 Normal, float roughness, float metallicness) {
 
 vec3 getSunLight(vec3 Normal, float roughness, float metallicness) {
 
-    vec3 sunAmbient = sun.Ia;
-    if (render_reflections == 1) {
-         sunAmbient *= 2;
-    }
+    vec3 sunAmbient = sun.Ia * sun.colour;
 
     // Diffuse
     vec3 lightDir = normalize(sun.direction);
     float diff = max(0.0, dot(lightDir, Normal));
-    vec3 sunDiffuse = diff * sun.Id;
+    vec3 sunDiffuse = diff * (sun.Id * sun.colour);
 
     // Reflectance based off metalicness
     vec3 reflectance = mix(vec3(0.04), vec3(0.5), metallicness);
@@ -155,7 +153,7 @@ vec3 getSunLight(vec3 Normal, float roughness, float metallicness) {
     float G = min(1.0, min(2.0 * NdotH * NdotV / HdotV, 2.0 * NdotH * NdotL / HdotV));
 
     vec3 specularContrib = (D * F * G) / (4.0 * NdotL * NdotV + 0.001);
-    vec3 sunSpecular = specularContrib * sun.Is;
+    vec3 sunSpecular = specularContrib * (sun.Is * sun.colour);
 
     // Shadow
     float shadow = getShadow();

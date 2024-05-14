@@ -149,6 +149,16 @@ Delta time: {self.app.delta_time * 1000:.2f} ms''')
         if self.selected_object[0] == '#1457Sun':
             imgui.columns(2)
             imgui.set_column_width(0, imgui.get_window_width() * 0.4)
+            imgui.text('Colour:')
+            imgui.next_column()
+            imgui.push_item_width(-1)
+            sun_rgb = self.light_handler.sun.colour
+            sun_colour_picker = imgui.color_edit3("  Colour Picker", sun_rgb[0], sun_rgb[1], sun_rgb[2])
+            if sun_colour_picker[0]:
+                self.light_handler.sun.colour = glm.vec3(sun_colour_picker[1])
+            
+            imgui.next_column()
+
             imgui.text('Direction:')
             imgui.next_column()
             imgui.push_item_width(-1)
@@ -159,6 +169,7 @@ Delta time: {self.app.delta_time * 1000:.2f} ms''')
                 norm_sun_dir = glm.normalize(glm.vec3(sun_direction[1]))
                 self.light_handler.sun.direction = norm_sun_dir
                 self.light_handler.direction = norm_sun_dir
+            
 
         elif self.selected_object[1] != 'grr':
             obj = self.scene_objects[self.selected_object[1]]

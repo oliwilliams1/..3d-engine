@@ -3,14 +3,14 @@ import glm
 ortho_1_width = 20 # orhtho width
 
 class Sun:
-    def __init__(self, color=(1, 1, 1)):
-        self.color = glm.vec3(color)
+    def __init__(self, colour=(1, 1, 1)):
+        self.colour = glm.vec3(colour)
         self.unormalized_direction = (1, 2, 0.5)
         self.direction = glm.normalize(glm.vec3(self.unormalized_direction))
         # intensities
-        self.Ia = 0.18 * self.color  # ambient
-        self.Id = 1.5 * self.color  # diffuse
-        self.Is = 2 * self.color  # specular
+        self.Ia = glm.vec1(0.18)
+        self.Id = glm.vec1(1.5)
+        self.Is = glm.vec1(2)
 
 class Light:
     def __init__(self):
