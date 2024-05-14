@@ -98,9 +98,6 @@ class SceneRenderer:
                 obj.render_shadow()
 
     def render(self):
-        self.scene.update()
-        self.render_shadow()
-        self.app.ctx.screen.use()
         self.cull.rendering(self.scene.objects)
         self.scene.skybox.render()
 

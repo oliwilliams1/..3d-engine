@@ -9,8 +9,8 @@ class Sun:
         self.direction = glm.normalize(glm.vec3(self.unormalized_direction))
         # intensities
         self.Ia = 0.18 * self.color  # ambient
-        self.Id = 1.0 * self.color  # diffuse
-        self.Is = 1.5 * self.color  # specular
+        self.Id = 1.5 * self.color  # diffuse
+        self.Is = 2 * self.color  # specular
 
 class Light:
     def __init__(self):

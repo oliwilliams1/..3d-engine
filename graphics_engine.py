@@ -45,17 +45,13 @@ class GraphicsEngine:
         self.time = 0
         # light
         self.light = Light()
-        init_lights()
-        # camera
+        init_lights() # from models.py
         self.camera = camera.Camera(self)
-        # mesh
         self.mesh = Mesh(self)
         # materials
         self.material_class = Materials(self)
         self.materials = self.material_class.materials
-        # scene
         self.scene = scene.Scene(self)
-        # renderer
         self.scene_renderer = SceneRenderer(self)
 
         if WIREFRAME:
@@ -70,7 +66,9 @@ class GraphicsEngine:
         
         self.cube_map_render_data = {'rendering' : False,
                                      'camera_pos' : None,
-                                     'face' : None,}
+                                     'face' : None}
+        
+        self.past_swap_buffer = 0
 
     def check_events(self):
         glfw.poll_events()
@@ -81,25 +79,47 @@ class GraphicsEngine:
             sys.exit()
         
     def render(self):
-        # Clear the framebuffer
+        # update the scene
+        pre_update_time = glfw.get_time()
+        self.scene.update()
+        self.update_time = glfw.get_time() - pre_update_time
         self.ctx.clear(color=(0.08, 0.16, 0.18))
-        # Set the viewport
         self.ctx.viewport = self.viewport
-        # Render the scene
+
+        # render shadows
+        pre_shadow_time = glfw.get_time()
+        self.scene_renderer.render_shadow()
+        self.shadow_time = glfw.get_time() - pre_shadow_time
+        
+        # render scene
+        pre_render_time = glfw.get_time()
+        self.ctx.screen.use()
         self.scene_renderer.render()
-        # Render ui
+        self.render_time = glfw.get_time() - pre_render_time
+        
+        # render skybox
+        pre_skybox_time = glfw.get_time()
+        self.scene.skybox.render()
+        self.skybox_time = glfw.get_time() - pre_skybox_time
+        
+        # render ui
+        self.pre_imgui_time = glfw.get_time()
         self.imgui_renderer.render()
+        pre_swap_buffer = glfw.get_time()
         glfw.swap_buffers(self.window)
+        self.past_swap_buffer = glfw.get_time() - pre_swap_buffer
 
     def get_time(self):
         self.time = glfw.get_time()
 
     def run(self):
+        pre_event_time = glfw.get_time()
         self.get_time()
         self.rel_mouse()
         self.cursor_hide()
         self.camera.update()
         self.check_events()
+        self.event_time = glfw.get_time() - pre_event_time
         self.render()
         self.delta_time = glfw.get_time() - self.time
         #glfw.set_window_title(self.window, f'FPS: {1/self.delta_time:.2f}, {self.delta_time*1000:.2f}ms')

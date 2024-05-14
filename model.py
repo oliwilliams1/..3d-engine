@@ -18,7 +18,7 @@ def init_lights():
     light1 = {
         'position': glm.vec3(-15, 15, -12),
         'colour': glm.vec3(1.0, 0.0, 0.0),
-        'intensity': struct.pack('f', 1.0),
+        'intensity': struct.pack('f', 3.0),
         'range': struct.pack('f', 10.0)
     }
     
@@ -26,21 +26,21 @@ def init_lights():
     light2 = {
         'position': glm.vec3(0, 15, -12),
         'colour': glm.vec3(0.0, 1.0, 0.0),
-        'intensity': struct.pack('f', 1.0),
+        'intensity': struct.pack('f', 3.0),
         'range': struct.pack('f', 10.0)
     }
 
     light3 = {
         'position': glm.vec3(15, 15, -12),
         'colour': glm.vec3(0.0, 0.0, 1.0),
-        'intensity': struct.pack('f', 1.0),
+        'intensity': struct.pack('f', 3.0),
         'range': struct.pack('f', 10.0)
     }
     
     light4 = {
         'position': glm.vec3(0, 2, 4),
         'colour': glm.vec3(1.0, 0.0, 1.0),
-        'intensity': struct.pack('f', 6.9),
+        'intensity': struct.pack('f', 15),
         'range': struct.pack('f', 5.0)
     }
     # Add the lights to the list

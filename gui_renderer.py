@@ -4,6 +4,7 @@ from glm import vec3
 from numpy import rad2deg, radians
 from PIL import Image
 import glm
+from glfw import get_time
 image = Image.open('objects/cat/20430_cat_diff_v1.jpg')
 image.resize((128, 128))
 image_data = image.convert('RGB').tobytes()
@@ -48,6 +49,7 @@ def update_camera_vectors():
 
 class imGuiRenderer:
     def __init__(self, app):
+        self.app = app
         self.window = app.window
         imgui.create_context()
         self.imgui_renderer = GlfwRenderer(self.window)
@@ -85,6 +87,7 @@ class imGuiRenderer:
         imgui.begin('Properties', flags=imgui.WINDOW_NO_RESIZE | imgui.WINDOW_NO_COLLAPSE)
         self.render_object_properties()
         imgui.end()
+
         imgui.show_demo_window()
 
         imgui.set_next_window_position(1300, 425)
@@ -98,15 +101,31 @@ class imGuiRenderer:
         self.render_cubemap_editor()
         imgui.end()
 
+        imgui.set_next_window_position(1300, 110)
+        imgui.set_next_window_size(300, 315)
         imgui.begin('Shadow Viewer', flags=imgui.WINDOW_NO_RESIZE | imgui.WINDOW_NO_COLLAPSE)
         imgui.image(self.texture_handler.textures['depth_texture'].glo, 275, 275)
         imgui.end()
 
-        '''imgui.begin('camera')
-        self.camera.yaw = cam_yaw
-        self.camera.pitch = cam_pitch
-        update_camera_vectors()
-        imgui.end()'''
+        imgui.set_next_window_position(1300, 0)
+        imgui.set_next_window_size(300, 110)
+        imgui.begin('Performance Graph')
+        update_time = self.app.update_time * 1000
+        shadow_time = self.app.shadow_time * 1000
+        render_time = self.app.render_time * 1000
+        skybox_time = self.app.skybox_time * 1000
+        event_time  = self.app.event_time  * 1000
+        imgui_time  = (get_time() - self.app.pre_imgui_time) * 1000
+        buffer_time = self.app.past_swap_buffer * 1000
+        imgui.text(f'''Update time: {update_time:.4f} ms
+Shadow time: {shadow_time:.4f} ms
+Render time: {render_time:.4f} ms
+Skybox time: {skybox_time:.4f} ms
+Event time: {event_time:.4f} ms
+Imgui time: {imgui_time:.4f} ms
+Buffer swap time: {buffer_time:.2f} ms
+Delta time: {self.app.delta_time * 1000:.2f} ms''')
+        imgui.end()
 
         imgui.render()
         self.imgui_renderer.render(imgui.get_draw_data())

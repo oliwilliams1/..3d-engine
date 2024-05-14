@@ -129,6 +129,9 @@ vec3 getLight(vec3 Normal, float roughness, float metallicness) {
 vec3 getSunLight(vec3 Normal, float roughness, float metallicness) {
 
     vec3 sunAmbient = sun.Ia;
+    if (render_reflections == 1) {
+         sunAmbient *= 2;
+    }
 
     // Diffuse
     vec3 lightDir = normalize(sun.direction);
