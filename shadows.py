@@ -41,38 +41,18 @@ class ShadowRenderer():
                 obj.render_shadow()
     
     def update_matricies(self):
-        m_view = self.app.camera.m_view
-        m_proj = glm.perspective(glm.radians(self.app.camera.fov), self.app.camera.aspect_ratio, 0.1, 15)
-
-        corners = calculate_frustum_corners(m_view, m_proj)
-
-        center = sum(corners) / len(corners)
-
+        cascade_near, cascade_far = 0.1, 10
         light_dir = self.app.light.sun.direction
-        m_view_light = glm.lookAt(center + 50 * light_dir, center + glm.epsilon(), glm.vec3(0, 1, 0))
+        cascade1_m_proj = glm.perspective(glm.radians(self.app.camera.fov), self.app.camera.aspect_ratio, cascade_near, cascade_far)
+        corners = calculate_frustum_corners(self.app.camera.m_view, cascade1_m_proj)
+        #print(len(corners))
+        center = sum(corners) / len(corners)
+        radius = calculate_bounding_sphere(corners, center)
+        self.app.light.m_proj_light = glm.ortho(-radius, radius, -radius, radius, 0.1, 100)
+        self.app.light.m_view_light = glm.lookAt(center + 50 * light_dir, center + glm.vec3(0.001), glm.vec3(0, 1, 0))
 
-        cam_space_corners = [glm.vec4(corner, 1) * m_view_light for corner in corners]
-
-        x_verts = [corner.y for corner in cam_space_corners]
-        y_verts = [corner.z for corner in cam_space_corners]
-        z_verts = [corner.x for corner in cam_space_corners]
-        min_x, max_x = min(x_verts), max(x_verts)
-        min_y, max_y = min(y_verts), max(y_verts)
-        min_z, max_z = min(z_verts), max(z_verts)
-
-        z_mult = 10
-        if min_z < 0:
-            min_z *= z_mult
-        else:
-            min_z /= z_mult
-        if max_z < 0:
-            max_z /= z_mult
-        else:
-            max_z *= z_mult
-
-
-        self.app.light.m_proj_light = glm.ortho(min_x, max_x, min_y, max_y, min_z, max_z)
-        self.app.light.m_view_light = m_view_light
+        self.app.scene.objects['cas_1_centre_point'].pos = center
+        self.app.scene.objects['cas_1_centre_point'].scale = glm.vec3(radius) # m_moodel later updated by imgui
 
     def destroy(self):
         self.cascade_1_fbo.release()
