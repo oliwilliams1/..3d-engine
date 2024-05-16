@@ -34,7 +34,7 @@ def load_scene_objects():
 class Scene:
     def __init__(self, app):
         self.app = app
-        self.objects = []
+        self.objects = {}
         self.scene_objects = load_scene_objects()
         #self.chunk_size = int(config.retrieveConfig('CHUNK_SIZE'))
         #import physics
@@ -47,8 +47,8 @@ class Scene:
         self.basic_skybox = SkyBox(app)
         self.convoluter = Convolution(app)
 
-    def add_object(self, obj):
-        self.objects.append(obj)
+    def add_object(self, obj, display_name):
+        self.objects[display_name] = obj
 
     def load(self):
         app = self.app
@@ -65,7 +65,11 @@ class Scene:
             object_scale = obj['scale']
             cast_shadow = obj['cast_shadow']
 
-            add(models[object_name](app, tex_id=object_material, pos=object_pos, rot=object_rot, scale=object_scale, display_name=display_name, cast_shadow=cast_shadow))
+            add(models[object_name](app, tex_id=object_material, pos=object_pos, rot=object_rot, scale=object_scale, display_name=display_name, cast_shadow=cast_shadow), display_name)
+
+        add(models['sphere'](app, tex_id='sphere', display_name='cas_1_centre_point', cast_shadow=True, scale=glm.vec3(0.2)), 'cas_1_centre_point')
+        #add(models['sphere'](app, tex_id='sphere', display_name='cas_2_centre_point', cast_shadow=True, scale=glm.vec3(1.5)), 'cas_2_centre_point')
+        #add(models['sphere'](app, tex_id='sphere', display_name='cas_3_centre_point', cast_shadow=True, scale=glm.vec3(7)), 'cas_3_centre_point')
 
         #n, s = 10, 2
         #for x in range(-n, n, s):
@@ -79,11 +83,27 @@ class Scene:
         for i in range(len(physics_objects)):
             add(self.physics_objects[f'obj_{str(i)}'])""" 
 
-    def update(self): ...
-        #for i in range(len(physics_objects)):
-        #    self.physics_objects[f'obj_{str(i)}'].pos = glm.vec3(physics_objects[i][0]/100, physics_objects[i][2]/100 + 5, physics_objects[i][1]/100)
-
-
+    def update(self):
+        '''# cascade 1 (custum proj)
+        for i in range(3):
+            match i:
+                case 0:
+                    near, far = 0.1, 10
+                case 1:
+                    near, far = 10, 30
+                case 2:
+                    near, far = 30, 100
+    
+            m_proj = glm.perspective(glm.radians(self.app.camera.fov), self.app.camera.aspect_ratio, near, far)
+            corners = calculate_frustum_corners(self.app.camera.m_view, m_proj)
+            center_point = sum(corners) / len(corners)
+            radius = calc_bounding_sphere_radius(corners, center_point)
+            center_point_obj = self.objects[f'cas_{i+1}_centre_point']
+            center_point_obj.pos = glm.vec3(center_point)
+            center_point_obj.update_m_model()
+            if i == 1:
+                print(f'Cascade {i+1} center point: {center_point}, radius: {radius}')
+        '''
 #################################################################################
 #positioning: .pos = glm.vec3(x,y,z)   (x,y,z = float) (default values: 0, 0, 0)#
 #rotations:   .rot = .x, .y, .z, .xyz  (x,y,z = float) (default values: 0, 0, 0)#

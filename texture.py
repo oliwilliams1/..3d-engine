@@ -92,7 +92,7 @@ class Texture:
         self.textures[1] = self.get_texture(path=f'{script_path}/textures/img_1.png')
         self.textures[2] = self.get_texture(path=f'{script_path}/textures/img_2.png')
         self.textures['skybox'] = self.get_texture_cube(dir_path=f'{script_path}/textures/skybox1/', ext='png')
-        self.textures['depth_texture'] = self.get_depth_texture()
+        self.textures['cascade_1'] = self.get_depth_texture()
         self.textures['irradiance'] = self.get_texture_cube(dir_path=f'{script_path}/cubemap_renderer/convoluted-', ext='jpg')
         self.textures['reflection'] = self.get_texture_cube(dir_path=f'{script_path}/cubemap_renderer/sharp-', ext='jpg')
         self.textures['brdf_lut'] = self.get_texture(path=f'{script_path}/textures/brdf_lut.png')

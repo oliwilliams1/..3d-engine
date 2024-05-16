@@ -12,9 +12,7 @@ class SceneRenderer:
         self.ctx = app.ctx
         self.mesh = app.mesh
         self.scene = app.scene
-        # depth buffer
-        self.depth_texture = self.mesh.texture.textures['depth_texture']
-        self.depth_fbo = self.ctx.framebuffer(depth_attachment=self.depth_texture)
+        
     def get_texture_cube(self):
         faces = ['right', 'left', 'top', 'bottom'] + ['front', 'back'][::-1]
         textures = []
@@ -89,17 +87,6 @@ class SceneRenderer:
         self.scene.skybox.on_init()       # to fix a bug, doesnt matter performance
         self.scene.basic_skybox.on_init() # wise, as not rendering real-time
 
-    def render_shadow(self):
-        self.app.light.update_view_matrix(self.app.camera.position)
-        self.depth_fbo.clear()
-        self.depth_fbo.use()
-        for obj in self.scene.objects:
-            if obj.cast_shadow:
-                obj.render_shadow()
-
     def render(self):
-        self.cull.rendering(self.scene.objects)
+        self.cull.rendering(self.scene.objects.values())
         self.scene.skybox.render()
-
-    def destroy(self):
-        self.depth_fbo.release()

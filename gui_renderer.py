@@ -1,6 +1,5 @@
 import imgui
 from imgui.integrations.glfw import GlfwRenderer
-from glm import vec3
 from numpy import rad2deg, radians
 from PIL import Image
 import glm
@@ -13,7 +12,7 @@ def from_vec3(vec):
     return [round(rad2deg(vec.x), 3), round(rad2deg(vec.y), 3), round(rad2deg(vec.z), 3)]
 
 def to_vec3(rot):
-    return vec3(radians(rot[0]), radians(rot[1]), radians(rot[2]))
+    return glm.vec3(radians(rot[0]), radians(rot[1]), radians(rot[2]))
 
 pos_step = 0.1
 rot_step = 1
@@ -102,9 +101,10 @@ class imGuiRenderer:
         imgui.end()
 
         imgui.set_next_window_position(1300, 110)
-        imgui.set_next_window_size(300, 315)
+        imgui.set_next_window_size(300, 325)
         imgui.begin('Shadow Viewer', flags=imgui.WINDOW_NO_RESIZE | imgui.WINDOW_NO_COLLAPSE)
-        imgui.image(self.texture_handler.textures['depth_texture'].glo, 275, 275)
+        imgui.text('Cascade 1')
+        imgui.image(self.texture_handler.textures['cascade_1'].glo, 275, 275)
         imgui.end()
 
         imgui.set_next_window_position(1300, 0)
@@ -139,11 +139,10 @@ Delta time: {self.app.delta_time * 1000:.2f} ms''')
             self.selected_object = ['#1457Sun', None]
             print(f'Selected object: {self.selected_object} index: None')
     
-        for i, obj in enumerate(self.scene_objects):
+        for obj in self.scene_objects.values():
             selected, _ = imgui.selectable(obj.display_name, selected=obj.display_name == self.selected_object[0])
             if selected:
-                self.selected_object = [obj.display_name, i]
-                print(f'Selected object: {self.selected_object} index: {i}')
+                self.selected_object = [obj.display_name, obj.display_name]
     
     def render_object_properties(self):
         if self.selected_object[0] == '#1457Sun':
@@ -294,3 +293,5 @@ Delta time: {self.app.delta_time * 1000:.2f} ms''')
     def render_cubemap_editor(self):
         if imgui.button('512x'):
             self.cube_renderer((512, 512))
+        if imgui.button('update cascades'):
+            self.app.scene.objects['cas_1_centre_point'].update_m_model()

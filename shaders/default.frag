@@ -43,7 +43,7 @@ uniform samplerCube u_reflection;
 uniform sampler2D u_brdf_lut;
 const float PI = 3.14159265359;
 const float MAX_REFLECTION_LOD = 7;
-uniform int render_reflections;
+uniform int IBL_enabled;
 
 float lookup(float ox, float oy) {
     vec2 pixelOffset = 1 / shadow_map_res; // divided by 1.5 for sharper shadows
@@ -198,7 +198,7 @@ void main() {
     vec3 sunLight = getSunLight(N, roughness, metallicness); // Sun light contrib
     vec3 pointLights = getLight(N, roughness, metallicness); // Point light contrib
     vec3 colour;
-    if (render_reflections == 1) {
+    if (IBL_enabled == 1) {
         vec3 F = fresnelSchlickRoughness(NdotV, baseReflectivity, roughness);
         vec3 kD = (1.0 - F);
         vec3 diffuse = texture(u_irradiance, N).rgb * albedo * kD;

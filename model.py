@@ -143,6 +143,7 @@ class ExtendedBaseModel(BaseModel):
     def update(self):
         self.program['sun.colour'].write(self.app.light.sun.colour)
         self.program['sun.direction'].write(self.app.light.sun.direction)
+        self.program['m_proj_light'].write(self.app.light.m_proj_light)
         self.program['m_view_light'].write(self.app.light.m_view_light)
         self.update_pbr_values()
         self.depth_texture.use(location=0) #-- fixes a weird bug with imgui, dont keep in final version?
@@ -169,6 +170,7 @@ class ExtendedBaseModel(BaseModel):
         self.undo_cupemap_updates()
 
     def update_shadow(self):
+        self.shadow_program['m_proj'].write(self.app.light.m_proj_light)
         self.shadow_program['m_view_light'].write(self.app.light.m_view_light)
         self.shadow_program['m_model'].write(self.m_model)
 
@@ -182,7 +184,7 @@ class ExtendedBaseModel(BaseModel):
         self.uses_normal = self.app.materials[self.tex_id].norm_rough_metal_height_values.x
 
     def undo_cupemap_updates(self):
-        self.program['render_reflections'].value = 1
+        self.program['IBL_enabled'].value = 1
         self.program['m_proj'].write(self.camera.m_proj)
 
     def update_cubemap(self, cam_pos, face):
@@ -190,7 +192,7 @@ class ExtendedBaseModel(BaseModel):
         self.depth_texture.use(location=0)
         self.diffuse.use(location=1)
 
-        self.program['render_reflections'].value = 0
+        self.program['IBL_enabled'].value = 0
 
         self.program['norm_rough_metal_height_values'].write(self.norm_rough_metal_height_values)
         self.program['mat_values'].write(self.mat_values)
@@ -204,7 +206,7 @@ class ExtendedBaseModel(BaseModel):
         self.program['m_model'].write(self.m_model)
 
     def on_init(self):
-        self.program['render_reflections'].value = 1
+        self.program['IBL_enabled'].value = 1
         self.update_pbr_values()
         # number of lights
         self.program['numLights'].value = num_lights
@@ -213,7 +215,7 @@ class ExtendedBaseModel(BaseModel):
         # resolution
         self.program['shadow_map_res'].write(glm.vec2(self.app.mesh.texture.shadow_res))
         # depth texture
-        self.depth_texture = self.app.mesh.texture.textures['depth_texture']
+        self.depth_texture = self.app.mesh.texture.textures['cascade_1']
         self.program['shadowMap'] = 0
         self.depth_texture.use(location=0)
         # shadow

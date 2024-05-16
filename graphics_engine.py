@@ -11,6 +11,7 @@ from config import Config
 from texture import Materials
 from gui_renderer import imGuiRenderer
 import OpenGL
+from shadows import ShadowRenderer
 
 config = Config()
 WIREFRAME = config.retrieveConfig('WIREFRAME')
@@ -53,7 +54,7 @@ class GraphicsEngine:
         self.materials = self.material_class.materials
         self.scene = scene.Scene(self)
         self.scene_renderer = SceneRenderer(self)
-
+        self.shadow_renderer = ShadowRenderer(self)
         if WIREFRAME:
             self.ctx.wireframe = True
         glfw.set_window_opacity(opacity=1, window=self.window)
@@ -74,7 +75,7 @@ class GraphicsEngine:
         glfw.poll_events()
         if glfw.window_should_close(self.window):
             self.mesh.destroy()
-            self.scene_renderer.destroy()
+            self.shadow_renderer.destroy()
             glfw.terminate() 
             sys.exit()
         
@@ -88,7 +89,7 @@ class GraphicsEngine:
 
         # render shadows
         pre_shadow_time = glfw.get_time()
-        self.scene_renderer.render_shadow()
+        self.shadow_renderer.render()
         self.shadow_time = glfw.get_time() - pre_shadow_time
         
         # render scene
