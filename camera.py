@@ -7,9 +7,6 @@ config = Config()
 FOV = config.retrieveConfig('FOV')
 NEAR = config.retrieveConfig('NEAR')
 FAR = config.retrieveConfig('FAR')
-GRAVITY = config.retrieveConfig('GRAVITY')
-JUMP_POWER = config.retrieveConfig('JUMP_POWER')
-GROUND_HEIGHT = config.retrieveConfig('GROUND_HEIGHT')
 SPEED = 5
 SENSITIVITY = 0.1
 

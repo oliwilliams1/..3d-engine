@@ -46,7 +46,7 @@ class SceneRenderer:
             cube_fbo.clear()
             cube_fbo.use()
             
-            for obj in self.scene.objects:
+            for obj in self.scene.objects.values():
                 obj.render_cube(cam_pos, face)
             self.scene.basic_skybox.render()
 

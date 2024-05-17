@@ -1,6 +1,6 @@
 import glm
 
-ortho_1_width = 0 # orhtho width
+ortho_1_width = 20 # orhtho width
 
 class Sun:
     def __init__(self, colour=(1, 1, 1)):

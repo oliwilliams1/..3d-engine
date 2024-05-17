@@ -80,43 +80,55 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
-vec3 getLight(vec3 Normal, float roughness, float metallicness, vec3 viewDir, float NdotV) {
+vec3 getLight(vec3 Normal, float roughness, float metallicness) {
+    vec3 viewDir = normalize(camPos - fragPos);
+
     // calculate the reflectance based on the roughness and metallicness
     vec3 reflectance = mix(vec3(0.04), vec3(0.5), metallicness);
 
     vec3 specular = vec3(0.0);
-    vec3 diffuse = vec3(0.0);
     for (int i = 0; i < numLights; i++) {
-        float distance = length(static_lights[i].position - fragPos);
-        if (distance > static_lights[i].range) {continue;} // skip lights that are too far away
-        float attenuation = smoothstep(static_lights[i].range, 0.0, distance);
-        vec3 light_contrib = static_lights[i].colour * static_lights[i].intensity * attenuation;
-        
         vec3 lightDir = normalize(static_lights[i].position - fragPos);
         vec3 halfwayDir = normalize(viewDir + lightDir);
 
         float NdotL = max(0.0, dot(Normal, lightDir));
+        float NdotV = max(0.0, dot(Normal, viewDir));
         float NdotH = max(0.0, dot(Normal, halfwayDir));
         float HdotV = max(0.0, dot(halfwayDir, viewDir));
 
         float D = DistributionGGX(Normal, halfwayDir, roughness);
         vec3 F = fresnelSchlick(HdotV, reflectance);
         float G = min(1.0, min(2.0 * NdotH * NdotV / HdotV, 2.0 * NdotH * NdotL / HdotV));
+
+        float distance = length(static_lights[i].position - fragPos);
+        float attenuation = smoothstep(static_lights[i].range, 0.0, distance);
+
         vec3 specularContrib = (D * F * G) / (4.0 * NdotL * NdotV + 0.001);
-
-        float diff = max(0.0, dot(lightDir, Normal));
-        vec3 diffuseContrib = diff * light_contrib;
-        vec3 finalContrib = mix(diffuseContrib, vec3(0), metallicness);
-        diffuse += finalContrib;
-
-        specular += specularContrib * light_contrib;
-
+        specular += specularContrib * static_lights[i].colour * static_lights[i].intensity * attenuation;
     }
-    
+
+    // Diffuse light
+    vec3 diffuse = vec3(0.0);
+    for (int i = 0; i < numLights; i++) {
+        vec3 lightDir = normalize(static_lights[i].position - fragPos);
+        float diff = max(0.0, dot(lightDir, Normal));
+
+        // Calculate distance between fragment and light source
+        float distance = length(static_lights[i].position - fragPos);
+
+        // Calculate and apply attenuation based on distance
+        float attenuation = smoothstep(static_lights[i].range, 0.0, distance);
+        vec3 diffuseContrib = diff * static_lights[i].colour * static_lights[i].intensity * attenuation;
+        vec3 finalContrib = mix(diffuseContrib, specular, metallicness);
+
+        diffuse += finalContrib;
+    }
+
     return diffuse + specular;
 }
 
-vec3 getSunLight(vec3 Normal, float roughness, float metallicness, vec3 viewDir, float NdotV) {
+vec3 getSunLight(vec3 Normal, float roughness, float metallicness) {
+
     vec3 sunAmbient = sun.Ia * sun.colour;
 
     // Diffuse
@@ -128,9 +140,11 @@ vec3 getSunLight(vec3 Normal, float roughness, float metallicness, vec3 viewDir,
     vec3 reflectance = mix(vec3(0.04), vec3(0.5), metallicness);
 
     // Specular
+    vec3 viewDir = normalize(camPos - fragPos);
     vec3 halfwayDir = normalize(viewDir + lightDir);
 
     float NdotL = max(0.0, dot(Normal, lightDir));
+    float NdotV = max(0.0, dot(Normal, viewDir));
     float NdotH = max(0.0, dot(Normal, halfwayDir));
     float HdotV = max(0.0, dot(halfwayDir, viewDir));
 
@@ -181,8 +195,8 @@ void main() {
     baseReflectivity = mix(baseReflectivity, albedo, metallicness);
 
     float NdotV = max(0.0, dot(N, viewDir));
-    vec3 sunLight = getSunLight(N, roughness, metallicness, viewDir, NdotV); // Sun light contrib
-    vec3 pointLights = getLight(N, roughness, metallicness, viewDir, NdotV); // Point light contrib
+    vec3 sunLight = getSunLight(N, roughness, metallicness); // Sun light contrib
+    vec3 pointLights = getLight(N, roughness, metallicness); // Point light contrib
     vec3 colour;
     if (IBL_enabled == 1) {
         vec3 F = fresnelSchlickRoughness(NdotV, baseReflectivity, roughness);
@@ -197,7 +211,6 @@ void main() {
     } else {
         colour = albedo * (sunLight + pointLights);
     }
-    
     colour = pow(colour, vec3(1.0 / gamma)); // Gamma correction
     fragcolour = vec4(colour, 1.0);
 }
