@@ -29,28 +29,37 @@ cube_verts = [
     glm.vec3(1, 1, 1),
 ]
 
-# Transform cube vertices using view matrix
 transformed_cube_verts = []
 for v in cube_verts:
     mvp = glm.vec4(v, 1.0) * m_view
     transformed_cube_verts.append(mvp)
 
-# Initialize Pygame
+min_x = min(v.x for v in transformed_cube_verts)
+max_x = max(v.x for v in transformed_cube_verts)
+min_y = min(v.z for v in transformed_cube_verts)
+max_y = max(v.z for v in transformed_cube_verts)
+
+AABB = [glm.vec2(min_x, min_y), glm.vec2(max_x, min_y), glm.vec2(min_x, max_y), glm.vec2(max_x, max_y)]
+
 pg.init()
 WIDTH, HEIGHT = 800, 800
 SCALE = 10
 screen = pg.display.set_mode((WIDTH, HEIGHT))
 screen_center = (screen.get_width() // 2, screen.get_height() // 2)
 
-# Set color for points
-point_color = pg.Color("red")
+red = pg.Color("red")
+black = pg.Color("black")
 
-# Function to draw a point on the screen (ignoring perspective)
 def draw_point(point):
-    # Offset point to center of the screen
     x = int(point.x * WIDTH / SCALE + screen_center[0])
-    y = int(-point.y * HEIGHT / SCALE + screen_center[1])  # Invert Y for screen coordinates
-    pg.draw.circle(screen, point_color, (x, y), 5)
+    if type(point) == glm.vec4:
+        y = int(-point.z * HEIGHT / SCALE + screen_center[1])
+        pg.draw.circle(screen, black, (x, y), 5)
+    else:
+        y = int(-point.y * HEIGHT / SCALE + screen_center[1])
+        pg.draw.circle(screen, red, (x, y), 10)
+
+    
 
 running = True
 while running:
@@ -58,12 +67,14 @@ while running:
         if event.type == pg.QUIT:
             running = False
 
-    # Clear screen
     screen.fill(pg.Color("white"))
 
-    # Draw all transformed points (ignoring perspective)
+    for point in AABB:
+        draw_point(point)
+
     for point in transformed_cube_verts:
         draw_point(point)
+
 
     # Update display
     pg.display.flip()

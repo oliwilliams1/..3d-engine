@@ -5,6 +5,24 @@ import glm
 
 faces = ['right', 'back', 'left', 'front', 'top', 'bottom']
 
+epsilon = glm.epsilon()
+
+def get_view_matrix(position, face):
+    match face:
+        case 'right':
+            m_view = glm.lookAt(position, position + glm.vec3(1, 0, 0) + epsilon, glm.vec3(0, 1, 0))
+        case 'back':
+            m_view = glm.lookAt(position, position + glm.vec3(0, 0, 1) + epsilon, glm.vec3(0, 1, 0))
+        case 'left':
+            m_view = glm.lookAt(position, position + glm.vec3(-1, 0, 0) + epsilon, glm.vec3(0, 1, 0))
+        case 'front':
+            m_view = glm.lookAt(position, position + glm.vec3(0, 0, -1) + epsilon, glm.vec3(0, 1, 0))
+        case 'top':
+            m_view = glm.lookAt(position, position + glm.vec3(0, 1, 0) + epsilon, glm.vec3(0, 0, 1))
+        case 'bottom':
+            m_view = glm.lookAt(position, position + glm.vec3(0, -1, 0) + epsilon, glm.vec3(0, 0, -1))
+    return m_view
+
 class SceneRenderer:
     def __init__(self, app):
         self.app = app
@@ -34,29 +52,33 @@ class SceneRenderer:
         return texture_cube
     
     def render_cube(self, size):
+        cam_pos = self.app.camera.position # make sure center of cubemap is where cam is
         self.app.cube_map_render_data['rendering'] = True
-        cam_pos = self.app.camera.position # change to cubemap centre pos
-        self.app.cube_map_render_data['camera_pos'] = cam_pos
+        self.app.cube_map_render_data['camera_pos'] = cam_pos # tell objects states
 
         for face in faces:
             self.app.cube_map_render_data['face'] = face
+            self.app.cube_map_render_data['m_view'] = get_view_matrix(self.app.camera.position, face)
+            
+            self.app.shadow_renderer.render(True) # True, rendering with custom view matrix
+
             color_texture = self.app.ctx.texture(size, 3, dtype='f1')
             depth_texture = depth_texture = self.app.ctx.depth_texture(size)
             cube_fbo = self.app.ctx.framebuffer(color_attachments=[color_texture], depth_attachment=depth_texture)
             cube_fbo.clear()
             cube_fbo.use()
-            
+
             for obj in self.scene.objects.values():
-                obj.render_cube(cam_pos, face)
+                obj.render_cube()
+
             self.scene.basic_skybox.render()
 
             data = np.empty((size[0], size[1], 3), dtype=np.float32)
             data = cube_fbo.read()
             image = Image.frombytes('RGB', size, data=data)
-
             image = image.transpose(Image.FLIP_TOP_BOTTOM)
-
             image.save(f'cubemap_renderer/sharp-{face}.jpg', 'JPEG')
+
         self.app.cube_map_render_data['rendering'] = False 
 
         cubemap_texture = self.get_texture_cube()

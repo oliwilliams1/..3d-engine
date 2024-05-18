@@ -67,7 +67,7 @@ class GraphicsEngine:
         
         self.cube_map_render_data = {'rendering' : False,
                                      'camera_pos' : None,
-                                     'face' : None}
+                                     'm_view': None}
         
         self.past_swap_buffer = 0
 
@@ -107,6 +107,7 @@ class GraphicsEngine:
         self.pre_imgui_time = glfw.get_time()
         self.imgui_renderer.render()
         pre_swap_buffer = glfw.get_time()
+
         glfw.swap_buffers(self.window)
         self.past_swap_buffer = glfw.get_time() - pre_swap_buffer
 

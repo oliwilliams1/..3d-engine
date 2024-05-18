@@ -164,8 +164,11 @@ class ExtendedBaseModel(BaseModel):
         self.program['static_lights[3].position'].write(glm.vec3(0, 2 + math.sin(self.iteras/100) * 2, 2))
         self.iteras += 1
 
-    def render_cube(self, cam_pos, face):
-        self.update_cubemap(cam_pos, face)
+    def render_cube(self):
+        self.update()
+        self.program['IBL_enabled'].value = 0
+        self.program['m_proj'].write(glm.perspective(glm.radians(90), 1, 0.1, 100))
+        self.program['m_view'].write(self.app.cube_map_render_data['m_view'])
         self.vao.render()
         self.undo_cupemap_updates()
 
@@ -188,6 +191,10 @@ class ExtendedBaseModel(BaseModel):
         self.program['m_proj'].write(self.camera.m_proj)
 
     def update_cubemap(self, cam_pos, face):
+        self.program['sun.colour'].write(self.app.light.sun.colour)
+        self.program['sun.direction'].write(self.app.light.sun.direction)
+        self.program['m_proj_light'].write(self.app.light.m_proj_light)
+        self.program['m_view_light'].write(self.app.light.m_view_light)
         self.update_pbr_values()
         self.depth_texture.use(location=0)
         self.diffuse.use(location=1)

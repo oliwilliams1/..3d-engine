@@ -1,5 +1,7 @@
 import glm
 
+epsilon = glm.epsilon()
+
 ndc_corners = [
     glm.vec4(-1, -1, -1, 1),
     glm.vec4(1, -1, -1, 1),
@@ -32,27 +34,43 @@ class ShadowRenderer():
         self.cascade_1_texture = self.app.mesh.texture.textures['cascade_1']
         self.cascade_1_fbo = self.ctx.framebuffer(depth_attachment=self.cascade_1_texture)
 
-    def render(self):
-        self.update_matricies()
+    def render(self, rendering_cubemap = False):
+        self.update_matricies(rendering_cubemap)
         self.cascade_1_fbo.clear()
         self.cascade_1_fbo.use()
         for obj in self.app.scene.objects.values():
             if obj.cast_shadow:
                 obj.render_shadow()
     
-    def update_matricies(self):
-        cascade_near, cascade_far = 0.1, 10
+    def update_matricies(self, rendering_cubemap):
+        cascade_near, cascade_far = 0.1, 15
         light_dir = self.app.light.sun.direction
         cascade1_m_proj = glm.perspective(glm.radians(self.app.camera.fov), self.app.camera.aspect_ratio, cascade_near, cascade_far)
-        corners = calculate_frustum_corners(self.app.camera.m_view, cascade1_m_proj)
-        #print(len(corners))
-        center = sum(corners) / len(corners)
-        radius = calculate_bounding_sphere(corners, center)
-        self.app.light.m_proj_light = glm.ortho(-radius, radius, -radius, radius, 0.1, 100)
-        self.app.light.m_view_light = glm.lookAt(center + 50 * light_dir, center + glm.vec3(0.001), glm.vec3(0, 1, 0))
+        
+        if rendering_cubemap == False:
+            m_view_camera = self.app.camera.m_view
+        else:
+            m_view_camera = self.app.cube_map_render_data['m_view']
+        
+        frust_verts = calculate_frustum_corners(m_view_camera, cascade1_m_proj)
+        center = sum(frust_verts) / len(frust_verts)
+        m_view_light = glm.lookAt(center + 50 * light_dir, center + epsilon, glm.vec3(0, 1, 0))
 
-        self.app.scene.objects['cas_1_centre_point'].pos = center
-        self.app.scene.objects['cas_1_centre_point'].scale = glm.vec3(radius) # m_moodel later updated by imgui
+        transformed_verts = []
+        for vert in frust_verts:
+            vert = glm.vec4(vert, 1)
+            vert = m_view_light * vert
+            transformed_verts.append(vert)
+        
+        x_verts = [vert.x for vert in transformed_verts]
+        y_verts = [vert.y for vert in transformed_verts]
+        min_x = min(x_verts)
+        max_x = max(x_verts)
+        min_y = min(y_verts)
+        max_y = max(y_verts)
+                
+        self.app.light.m_proj_light = glm.ortho(min_x, max_x, min_y, max_y, 0.1, 100)
+        self.app.light.m_view_light = m_view_light
 
     def destroy(self):
         self.cascade_1_fbo.release()
