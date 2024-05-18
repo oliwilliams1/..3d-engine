@@ -217,10 +217,7 @@ class ExtendedBaseModel(BaseModel):
         self.update_pbr_values()
         # number of lights
         self.program['numLights'].value = num_lights
-
         self.program['m_view_light'].write(self.app.light.m_view_light)
-        # resolution
-        self.program['shadow_map_res'].write(glm.vec2(self.app.mesh.texture.shadow_res))
         # depth texture
         self.depth_texture = self.app.mesh.texture.textures['cascade_1']
         self.program['shadowMap'] = 0

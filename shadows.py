@@ -43,7 +43,7 @@ class ShadowRenderer():
                 obj.render_shadow()
     
     def update_matricies(self, rendering_cubemap):
-        cascade_near, cascade_far = 0.1, 15
+        cascade_near, cascade_far = 0.1, 10
         light_dir = self.app.light.sun.direction
         cascade1_m_proj = glm.perspective(glm.radians(self.app.camera.fov), self.app.camera.aspect_ratio, cascade_near, cascade_far)
         

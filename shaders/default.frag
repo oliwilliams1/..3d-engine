@@ -34,7 +34,6 @@ uniform Sun sun;
 uniform sampler2D diff_0;
 uniform vec3 camPos;
 uniform sampler2DShadow shadowMap;
-uniform vec2 shadow_map_res;
 uniform vec4 norm_rough_metal_height_values;
 uniform Material maps;
 uniform vec2 mat_values;
@@ -45,26 +44,12 @@ const float PI = 3.14159265359;
 const float MAX_REFLECTION_LOD = 7;
 uniform int IBL_enabled;
 
-float lookup(float ox, float oy) {
-    vec2 pixelOffset = 1 / shadow_map_res; // divided by 1.5 for sharper shadows
-    return textureProj(shadowMap, shadowCoord + vec4(ox * pixelOffset.x * shadowCoord.w,
-                                                     oy * pixelOffset.y * shadowCoord.w, 0.0, 0.0));
-}
-
 float getShadow() { // pcf
     if (shadowCoord.x < 0.0 || shadowCoord.x > 1.0 || shadowCoord.y < 0.0 || shadowCoord.y > 1.0 || shadowCoord.z < 0.0 || shadowCoord.z > 1.0) {
         // if sampled point is outside the shadow map, consider it fully lit
         return 1.0;
     }
-    float shadow;
-    float swidth = 1;
-    float endp = swidth * 1.5;
-    for (float y = -endp; y <= endp; y += swidth) {
-        for (float x = -endp; x <= endp; x += swidth) {
-            shadow += lookup(x, y);
-        }
-    }
-    return shadow / 16;
+    return textureProj(shadowMap, shadowCoord);
 }
 
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
