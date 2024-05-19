@@ -154,7 +154,6 @@ class ExtendedBaseModel(BaseModel):
 
         if self.uses_normal:
             self.normal.use(location=2)
-
         self.program['camPos'].write(self.camera.position)
         self.program['m_view'].write(self.camera.m_view)
         self.program['m_model'].write(self.m_model)
@@ -219,6 +218,7 @@ class ExtendedBaseModel(BaseModel):
         self.program['numLights'].value = num_lights
         self.program['m_view_light'].write(self.app.light.m_view_light)
         # depth texture
+        self.program['shadowResolution'].write(glm.vec2(self.app.mesh.texture.shadow_res))
         self.depth_texture = self.app.mesh.texture.textures['cascade_1']
         self.program['shadowMap'] = 0
         self.depth_texture.use(location=0)

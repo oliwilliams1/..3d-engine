@@ -71,6 +71,6 @@ for object in loaded_objects:
     with open(f'{script_path}{folder_to_save_in}{mesh_name}{file_extention}', 'bw') as file:
         file.write(mesh_data_bytes)
     
-    print(f'Saved: {mesh_name}, Proccessing Time: {round(time.time() - prev_time, 2)}s')
+    print(f'Saved: {mesh_name}, Proccessing Time: {round(time.time() - prev_time, 2)}s') # processing times are incorrect i think
 
 print(f'\nTotal time: {round(time.time() - prev_tot_time, 2)}s')

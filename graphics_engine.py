@@ -36,7 +36,7 @@ class GraphicsEngine:
         # set the OpenGL context
         glfw.make_context_current(self.window)
         # turn vsync off
-        #glfw.swap_interval(0)        
+        #glfw.swap_interval(0)
         # create an moderngl context
         self.ctx = mgl.create_context()
         self.ctx.enable(flags=mgl.DEPTH_TEST | mgl.CULL_FACE)
@@ -131,9 +131,7 @@ class GraphicsEngine:
         self.scene_renderer.destroy()
         
     def get_key_state(self, key):
-        if glfw.get_key(self.window, key) == glfw.PRESS:
-            return True
-        return False
+        return glfw.get_key(self.window, key) == glfw.PRESS
     
     def rel_mouse(self):
         x, y = glfw.get_cursor_pos(self.window)
@@ -151,9 +149,7 @@ class GraphicsEngine:
                 glfw.set_input_mode(self.window, glfw.CURSOR, glfw.CURSOR_NORMAL)
 
     def get_mouse_button_state(self, button):
-        if glfw.get_mouse_button(self.window, button) == glfw.PRESS:
-            return True
-        return False
+        return glfw.get_mouse_button(self.window, button) == glfw.PRESS
     
 if __name__ == '__main__':
     app = GraphicsEngine()
@@ -162,4 +158,4 @@ if __name__ == '__main__':
         app.run()
 
     app.destroy()
-    glfw.terminate()    
+    glfw.terminate()
