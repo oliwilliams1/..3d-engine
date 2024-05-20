@@ -87,8 +87,8 @@ class SceneRenderer:
             self.convolute_cubemap(cam_pos, face, cubemap_texture)
 
     def convolute_cubemap(self, cam_pos, face, cubemap_texture):
-        convoluted_size = (512, 512)
-        color_texture = self.app.ctx.texture(convoluted_size, 3, dtype='f1')
+        convoluted_render_size = (512, 512)
+        color_texture = self.app.ctx.texture(convoluted_render_size, 3, dtype='f1')
         convolution_fbo = self.app.ctx.framebuffer(color_attachments=[color_texture])
         convolution_fbo.clear(color=(1, 0, 0))
         convolution_fbo.use()
@@ -96,12 +96,11 @@ class SceneRenderer:
         self.scene.convoluter.update_face(cam_pos, face, cubemap_texture)
         self.scene.convoluter.render()
         
-        data = np.empty((convoluted_size[0], convoluted_size[1], 3), dtype=np.float32)
+        data = np.empty((convoluted_render_size[0], convoluted_render_size[1], 3), dtype=np.float32)
         data = convolution_fbo.read()
-        image = Image.frombytes('RGB', convoluted_size, data=data)
+        image = Image.frombytes('RGB', convoluted_render_size, data=data)
 
         image = image.transpose(Image.FLIP_TOP_BOTTOM)
-
         image.save(f'cubemap_renderer/convoluted-{face}.jpg', 'JPEG')
         
         #convolution_fbo.release() #cant release, something to do with imgui??

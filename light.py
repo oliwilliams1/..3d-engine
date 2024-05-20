@@ -18,7 +18,7 @@ class Light:
         self.sun = Sun()
         self.direction = self.sun.direction
         # matricies
-        self.m_proj_light = self.get_proj_matrix()
+        self.m_c1_proj = self.get_proj_matrix()
         self.m_view_light = glm.lookAt(glm.vec3(0, 0, 0) + 100 * self.direction, glm.vec3(0, 0, 0) + epsilon, glm.vec3(0, 1, 0))
 
     def get_proj_matrix(self):

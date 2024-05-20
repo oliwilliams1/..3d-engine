@@ -143,7 +143,7 @@ class ExtendedBaseModel(BaseModel):
     def update(self):
         self.program['sun.colour'].write(self.app.light.sun.colour)
         self.program['sun.direction'].write(self.app.light.sun.direction)
-        self.program['m_proj_light'].write(self.app.light.m_proj_light)
+        self.program['m_proj_light'].write(self.app.light.m_c1_proj)
         self.program['m_view_light'].write(self.app.light.m_view_light)
         self.update_pbr_values()
         self.depth_texture.use(location=0) #-- fixes a weird bug with imgui, dont keep in final version?
@@ -169,10 +169,11 @@ class ExtendedBaseModel(BaseModel):
         self.program['m_proj'].write(glm.perspective(glm.radians(90), 1, 0.1, 100))
         self.program['m_view'].write(self.app.cube_map_render_data['m_view'])
         self.vao.render()
-        self.undo_cupemap_updates()
+        self.program['IBL_enabled'].value = 1
+        self.program['m_proj'].write(self.app.camera.m_proj)
 
     def update_shadow(self):
-        self.shadow_program['m_proj'].write(self.app.light.m_proj_light)
+        self.shadow_program['m_proj'].write(self.app.light.m_c1_proj)
         self.shadow_program['m_view_light'].write(self.app.light.m_view_light)
         self.shadow_program['m_model'].write(self.m_model)
 
@@ -184,32 +185,6 @@ class ExtendedBaseModel(BaseModel):
         self.norm_rough_metal_height_values = self.app.materials[self.tex_id].norm_rough_metal_height_values
         self.mat_values = glm.vec2(self.app.materials[self.tex_id].roughness_value, self.app.materials[self.tex_id].metalicness_value)
         self.uses_normal = self.app.materials[self.tex_id].norm_rough_metal_height_values.x
-
-    def undo_cupemap_updates(self):
-        self.program['IBL_enabled'].value = 1
-        self.program['m_proj'].write(self.camera.m_proj)
-
-    def update_cubemap(self, cam_pos, face):
-        self.program['sun.colour'].write(self.app.light.sun.colour)
-        self.program['sun.direction'].write(self.app.light.sun.direction)
-        self.program['m_proj_light'].write(self.app.light.m_proj_light)
-        self.program['m_view_light'].write(self.app.light.m_view_light)
-        self.update_pbr_values()
-        self.depth_texture.use(location=0)
-        self.diffuse.use(location=1)
-
-        self.program['IBL_enabled'].value = 0
-
-        self.program['norm_rough_metal_height_values'].write(self.norm_rough_metal_height_values)
-        self.program['mat_values'].write(self.mat_values)
-
-        if self.uses_normal:
-            self.normal.use(location=2)
-
-        self.program['camPos'].write(cam_pos)
-        self.program['m_proj'].write(glm.perspective(glm.radians(90), 1, 0.1, 100))
-        self.program['m_view'].write(get_view_matrix(self.app.camera.position, face))
-        self.program['m_model'].write(self.m_model)
 
     def on_init(self):
         self.program['IBL_enabled'].value = 1
@@ -225,7 +200,7 @@ class ExtendedBaseModel(BaseModel):
         # shadow
         self.shadow_vao = self.app.mesh.vao.vaos['shadow_' + self.vao_name]
         self.shadow_program = self.shadow_vao.program
-        self.shadow_program['m_proj'].write(self.app.light.m_proj_light)
+        self.shadow_program['m_proj'].write(self.app.light.m_c1_proj)
         self.shadow_program['m_view_light'].write(self.app.light.m_view_light)
         self.shadow_program['m_model'].write(self.m_model)
 
@@ -264,7 +239,7 @@ class ExtendedBaseModel(BaseModel):
         self.program['m_view'].write(self.camera.m_view)
         self.program['m_model'].write(self.m_model)
         # sun
-        self.program['m_proj_light'].write(self.app.light.m_proj_light)
+        self.program['m_proj_light'].write(self.app.light.m_c1_proj)
         self.program['sun.colour'].write(self.app.light.sun.colour)
         self.program['sun.direction'].write(self.app.light.sun.direction)
         self.program['sun.Ia'].write(self.app.light.sun.Ia)
