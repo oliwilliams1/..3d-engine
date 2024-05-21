@@ -20,7 +20,8 @@ class Light:
         # matrices
         self.proj_matrices = []
         self.view_matrices = []
-        self.dummy_matrices()
+        for i in range(3): # init list space for 3 cascade
+            self.dummy_matrices()
 
     def dummy_matrices(self):
         self.proj_matrices.append(glm.ortho(-ortho_1_width, ortho_1_width, -ortho_1_width, ortho_1_width, 0.1, 100))

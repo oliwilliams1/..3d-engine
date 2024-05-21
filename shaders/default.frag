@@ -5,7 +5,8 @@ layout (location = 0) out vec4 fragcolour;
 in vec2 uv_0;
 in vec3 normal;
 in vec3 fragPos;
-in vec4 shadowCoord;
+in vec4 cas1Coord;
+in vec4 cas2Coord;
 in mat3 TBN;
 
 struct Light {
@@ -33,7 +34,8 @@ uniform Light static_lights[30]; // max number of lights! state this in the engi
 uniform Sun sun;
 uniform sampler2D diff_0;
 uniform vec3 camPos;
-uniform sampler2DShadow shadowMap;
+uniform sampler2DShadow cas1Map;
+uniform sampler2DShadow cas2Map;
 uniform vec2 shadowResolution;
 uniform vec4 norm_rough_metal_height_values;
 uniform Material maps;
@@ -45,23 +47,31 @@ const float PI = 3.14159265359;
 const float MAX_REFLECTION_LOD = 7;
 uniform int IBL_enabled;
 
-float lookup(float ox, float oy) {
+float lookup(vec4 casCoord, sampler2DShadow shadowMap, float ox, float oy) {
     vec2 pixelOffset = 1 / shadowResolution;
-    return textureProj(shadowMap, shadowCoord + vec4(ox * pixelOffset.x * shadowCoord.w,
-                                                     oy * pixelOffset.y * shadowCoord.w, 0.0, 0.0));
+    return textureProj(shadowMap, casCoord + vec4(ox * pixelOffset.x * casCoord.w,
+                                                     oy * pixelOffset.y * casCoord.w, 0.0, 0.0));
 }
 
 float getSoftShadowX16() {
-    if (shadowCoord.x < 0.0 || shadowCoord.x > 1.0 || shadowCoord.y < 0.0 || shadowCoord.y > 1.0 || shadowCoord.z < 0.0 || shadowCoord.z > 1.0) {
-        // if sampled point is outside the shadow map, consider it fully lit
-        return 1.0;
-    }
     float shadow;
     float swidth = 1;
     float endp = swidth * 1.5;
-    for (float y = -endp; y <= endp; y += swidth) {
-        for (float x = -endp; x <= endp; x += swidth) {
-            shadow += lookup(x, y);
+    if (cas1Coord.x > 0.0 && cas1Coord.x < 1.0 && cas1Coord.y > 0.0 && cas1Coord.y < 1.0 && cas1Coord.z > 0.0 && cas1Coord.z < 1.0) {
+        for (float y = -endp; y <= endp; y += swidth) {
+            for (float x = -endp; x <= endp; x += swidth) {
+                shadow += lookup(cas1Coord, cas1Map, x, y);
+            }
+        }
+    } else {
+        if (cas2Coord.x > 0.0 && cas2Coord.x < 1.0 && cas2Coord.y > 0.0 && cas2Coord.y < 1.0 && cas2Coord.z > 0.0 && cas2Coord.z < 1.0) {
+            for (float y = -endp; y <= endp; y += swidth) {
+                for (float x = -endp; x <= endp; x += swidth) {
+                    shadow += lookup(cas2Coord, cas2Map, x, y);
+                }
+            }
+        } else {
+            return 1.0;
         }
     }
     return shadow / 16;

@@ -31,18 +31,30 @@ class ShadowRenderer():
     def __init__(self, app):
         self.app = app
         self.ctx = app.ctx
-        self.cascade_1_texture = self.app.mesh.texture.textures['cascade_1']
-        self.cascade_1_fbo = self.ctx.framebuffer(depth_attachment=self.cascade_1_texture)
+        self.c1_texture = self.app.mesh.texture.textures['cascade_1']
+        self.c1_fbo = self.ctx.framebuffer(depth_attachment=self.c1_texture)
+        self.c2_texture = self.app.mesh.texture.textures['cascade_2']
+        self.c2_fbo = self.ctx.framebuffer(depth_attachment=self.c2_texture)
+        self.c3_texture = self.app.mesh.texture.textures['cascade_3']
+        self.c3_fbo = self.ctx.framebuffer(depth_attachment=self.c3_texture)
+        
+        self.cascade_fbos = [self.c1_fbo, self.c2_fbo, self.c3_fbo]
 
     def render(self, rendering_cubemap = False):
-        self.update_matricies(rendering_cubemap)
-        self.cascade_1_fbo.clear()
-        self.cascade_1_fbo.use()
-        for obj in self.app.scene.objects.values():
-            if obj.cast_shadow:
-                obj.render_shadow()
+        full_cascade_data = [
+            [0, 0.1, 10, 0.1, 100], # cascade number, subfrusta near
+            [1, 10, 30, -50, 100],  # subfrasta far, cascade near
+            [2, 30, 200, -100, 200]  # cascade far
+        ]
+        for cascade_data in full_cascade_data:
+            self.update_matricies(rendering_cubemap, cascade_data)
+            self.cascade_fbos[cascade_data[0]].clear()
+            self.cascade_fbos[cascade_data[0]].use()
+            for obj in self.app.scene.objects.values():
+                if obj.cast_shadow:
+                    obj.render_shadow(cascade_data[0])
     
-    def update_matricies(self, rendering_cubemap):
+    def update_matricies(self, rendering_cubemap, cascade_data):
         light_dir = self.app.light.sun.direction
 
         if rendering_cubemap == False:
@@ -50,47 +62,32 @@ class ShadowRenderer():
         else:
             m_view_camera = self.app.cube_map_render_data['m_view']
 
-        cascade_data = [
-            [1, 0.1, 10]
-        ]
+        cascade, sf_near, sf_far, c_near, c_far = cascade_data
 
-        cascade_matricies = []
+        cascade_m_proj = glm.perspective(glm.radians(self.app.camera.fov), self.app.camera.aspect_ratio, sf_near, sf_far)
+        frust_verts = calculate_frustum_corners(m_view_camera, cascade_m_proj)
+        center = sum(frust_verts) / len(frust_verts)
+        m_view_light = glm.lookAt(center + 50 * light_dir, center + epsilon, glm.vec3(0, 1, 0))
 
-        for cascade in cascade_data:
-            cascade_near = cascade[1]
-            cascade_far = cascade[2]
-
-            cascade_m_proj = glm.perspective(glm.radians(self.app.camera.fov), self.app.camera.aspect_ratio, cascade_near, cascade_far)
-            frust_verts = calculate_frustum_corners(m_view_camera, cascade_m_proj)
-            center = sum(frust_verts) / len(frust_verts)
-            m_view_light = glm.lookAt(center + 50 * light_dir, center + epsilon, glm.vec3(0, 1, 0))
-
-            transformed_verts = []
-            for vert in frust_verts:
-                vert = glm.vec4(vert, 1)
-                vert = m_view_light * vert
-                transformed_verts.append(vert)  
-          
-            x_verts = [vert.x for vert in transformed_verts]
-            y_verts = [vert.y for vert in transformed_verts]
-            min_x = min(x_verts)
-            max_x = max(x_verts)
-            min_y = min(y_verts)
-            max_y = max(y_verts)
-
-            proj = glm.ortho(min_x, max_x, min_y, max_y, 0.1, 100)
-            view = m_view_light
-            
-            cascade_matricies.append([proj, view])
+        transformed_verts = []
+        for vert in frust_verts:
+            vert = glm.vec4(vert, 1)
+            vert = m_view_light * vert
+            transformed_verts.append(vert)  
         
-        temp_proj = []
-        temp_view = []
-        for cascade in cascade_matricies:
-            temp_proj.append(glm.mat4(cascade[0]))
-            temp_view.append(glm.mat4(cascade[1]))
+        x_verts = [vert.x for vert in transformed_verts]
+        y_verts = [vert.y for vert in transformed_verts]
+        min_x = min(x_verts)
+        max_x = max(x_verts)
+        min_y = min(y_verts)
+        max_y = max(y_verts)
 
-        self.app.light.proj_matrices = temp_proj
-        self.app.light.view_matrices = temp_view
-
+        proj = glm.ortho(min_x, max_x, min_y, max_y, c_near, c_far)
+        view = m_view_light
+                
+        self.app.light.proj_matrices[cascade] = proj
+        self.app.light.view_matrices[cascade] = view
+        
     def destroy(self):
-        self.cascade_1_fbo.release()
+        for fbo in self.cascade_fbos:
+            fbo.release()

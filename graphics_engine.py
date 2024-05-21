@@ -53,7 +53,7 @@ class GraphicsEngine:
         self.material_class = Materials(self)
         self.materials = self.material_class.materials
         self.shadow_renderer = ShadowRenderer(self)
-        self.shadow_renderer.update_matricies(False)
+        self.shadow_renderer.update_matricies(False, [0, 0.1, 10, 0.1, 100])
         self.scene = scene.Scene(self)
         self.scene_renderer = SceneRenderer(self)
         if WIREFRAME:

@@ -100,11 +100,11 @@ class imGuiRenderer:
         self.render_cubemap_editor()
         imgui.end()
 
-        imgui.set_next_window_position(1300, 110)
-        imgui.set_next_window_size(300, 325)
-        imgui.begin('Shadow Viewer', flags=imgui.WINDOW_NO_RESIZE | imgui.WINDOW_NO_COLLAPSE)
+        imgui.begin('Shadow Viewer')
         imgui.text('Cascade 1')
         imgui.image(self.texture_handler.textures['cascade_1'].glo, 275, 275)
+        imgui.image(self.texture_handler.textures['cascade_2'].glo, 275, 275)
+        imgui.image(self.texture_handler.textures['cascade_3'].glo, 275, 275)
         imgui.end()
 
         imgui.set_next_window_position(1300, 0)
