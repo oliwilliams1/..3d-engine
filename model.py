@@ -143,8 +143,11 @@ class ExtendedBaseModel(BaseModel):
     def update(self):
         self.program['sun.colour'].write(self.app.light.sun.colour)
         self.program['sun.direction'].write(self.app.light.sun.direction)
-        self.program['m_proj_light'].write(self.app.light.m_c1_proj)
-        self.program['m_view_light'].write(self.app.light.m_view_light)
+        for i, proj in enumerate(self.app.light.proj_matrices):
+            self.program[f'm_proj_light[{i}]'].write(proj)
+            
+        for i, view in enumerate(self.app.light.view_matrices):
+            self.program[f'm_view_light[{i}]'].write(view)
         self.update_pbr_values()
         self.depth_texture.use(location=0) #-- fixes a weird bug with imgui, dont keep in final version?
         self.diffuse.use(location=1)
@@ -172,13 +175,13 @@ class ExtendedBaseModel(BaseModel):
         self.program['IBL_enabled'].value = 1
         self.program['m_proj'].write(self.app.camera.m_proj)
 
-    def update_shadow(self):
-        self.shadow_program['m_proj'].write(self.app.light.m_c1_proj)
-        self.shadow_program['m_view_light'].write(self.app.light.m_view_light)
+    def update_shadow(self, cascade):
+        self.shadow_program['m_proj'].write(self.app.light.proj_matrices[cascade])
+        self.shadow_program['m_view_light'].write(self.app.light.m_view_light[cascade])
         self.shadow_program['m_model'].write(self.m_model)
 
     def render_shadow(self):
-        self.update_shadow()
+        self.update_shadow(cascade=0)
         self.shadow_vao.render()
 
     def update_pbr_values(self):
@@ -191,7 +194,10 @@ class ExtendedBaseModel(BaseModel):
         self.update_pbr_values()
         # number of lights
         self.program['numLights'].value = num_lights
-        self.program['m_view_light'].write(self.app.light.m_view_light)
+
+        for i, view in enumerate(self.app.light.view_matrices):
+            self.program[f'm_view_light[{i}]'].write(view)
+
         # depth texture
         self.program['shadowResolution'].write(glm.vec2(self.app.mesh.texture.shadow_res))
         self.depth_texture = self.app.mesh.texture.textures['cascade_1']
@@ -200,7 +206,8 @@ class ExtendedBaseModel(BaseModel):
         # shadow
         self.shadow_vao = self.app.mesh.vao.vaos['shadow_' + self.vao_name]
         self.shadow_program = self.shadow_vao.program
-        self.shadow_program['m_proj'].write(self.app.light.m_c1_proj)
+
+        self.shadow_program['m_proj'].write(self.app.light.proj_matrices[0])
         self.shadow_program['m_view_light'].write(self.app.light.m_view_light)
         self.shadow_program['m_model'].write(self.m_model)
 
@@ -239,7 +246,8 @@ class ExtendedBaseModel(BaseModel):
         self.program['m_view'].write(self.camera.m_view)
         self.program['m_model'].write(self.m_model)
         # sun
-        self.program['m_proj_light'].write(self.app.light.m_c1_proj)
+        for i, proj in enumerate(self.app.light.proj_matrices):
+            self.program[f'm_proj_light[{i}]'].write(proj)
         self.program['sun.colour'].write(self.app.light.sun.colour)
         self.program['sun.direction'].write(self.app.light.sun.direction)
         self.program['sun.Ia'].write(self.app.light.sun.Ia)

@@ -14,8 +14,8 @@ out mat3 TBN;
 
 uniform mat4 m_proj;
 uniform mat4 m_view;
-uniform mat4 m_proj_light;
-uniform mat4 m_view_light;
+uniform mat4 m_proj_light[3];
+uniform mat4 m_view_light[3];
 uniform mat4 m_model;
 
 mat4 m_shadow_bias = mat4(
@@ -37,7 +37,7 @@ void main() {
     normal = mat3(transpose(inverse(m_model))) * normalize(in_normal);
     gl_Position = m_proj * m_view * m_model * vec4(in_position, 1.0);
 
-    mat4 shadowMVP = m_proj_light * m_view_light * m_model;
+    mat4 shadowMVP = m_proj_light[0] * m_view_light[0] * m_model;
     shadowCoord = m_shadow_bias * shadowMVP * vec4(in_position, 1.0);
     shadowCoord.z -= 0.0005;
 }

@@ -17,9 +17,11 @@ class Light:
     def __init__(self):
         self.sun = Sun()
         self.direction = self.sun.direction
-        # matricies
-        self.m_c1_proj = self.get_proj_matrix()
-        self.m_view_light = glm.lookAt(glm.vec3(0, 0, 0) + 100 * self.direction, glm.vec3(0, 0, 0) + epsilon, glm.vec3(0, 1, 0))
+        # matrices
+        self.proj_matrices = []
+        self.view_matrices = []
+        self.dummy_matrices()
 
-    def get_proj_matrix(self):
-        return glm.ortho(-ortho_1_width, ortho_1_width, -ortho_1_width, ortho_1_width, 0.1, 500)
+    def dummy_matrices(self):
+        self.proj_matrices.append(glm.ortho(-ortho_1_width, ortho_1_width, -ortho_1_width, ortho_1_width, 0.1, 100))
+        self.view_matrices.append(glm.lookAt(self.sun.direction, glm.vec3(0), glm.vec3(0, 1, 0)))

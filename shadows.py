@@ -84,11 +84,13 @@ class ShadowRenderer():
             cascade_matricies.append([proj, view])
         
         temp_proj = []
+        temp_view = []
         for cascade in cascade_matricies:
-            temp_proj.append(cascade)
+            temp_proj.append(glm.mat4(cascade[0]))
+            temp_view.append(glm.mat4(cascade[1]))
 
-        self.app.light.m_c1_proj = temp_proj[0][0]
-        self.app.light.m_view_light = temp_proj[0][1]
+        self.app.light.proj_matrices = temp_proj
+        self.app.light.view_matrices = temp_view
 
     def destroy(self):
         self.cascade_1_fbo.release()

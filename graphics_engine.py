@@ -52,9 +52,10 @@ class GraphicsEngine:
         # materials
         self.material_class = Materials(self)
         self.materials = self.material_class.materials
+        self.shadow_renderer = ShadowRenderer(self)
+        self.shadow_renderer.update_matricies(False)
         self.scene = scene.Scene(self)
         self.scene_renderer = SceneRenderer(self)
-        self.shadow_renderer = ShadowRenderer(self)
         if WIREFRAME:
             self.ctx.wireframe = True
         glfw.set_window_opacity(opacity=1, window=self.window)
