@@ -150,16 +150,20 @@ class ExtendedBaseModel(BaseModel):
         self.program['m_proj_light_2'].write(self.app.light.proj_matrices[1])
         self.program['m_view_light_2'].write(self.app.light.view_matrices[1])
 
+        self.program['m_proj_light_3'].write(self.app.light.proj_matrices[2])
+        self.program['m_view_light_3'].write(self.app.light.view_matrices[2])
+
         self.update_pbr_values()
         self.cas1_map.use(location=0) #-- fixes a weird bug with imgui, dont keep in final version?
         self.cas2_map.use(location=1)
-        self.diffuse.use(location=2)
+        self.cas3_map.use(location=2)
+        self.diffuse.use(location=3)
         
         self.program['norm_rough_metal_height_values'].write(self.norm_rough_metal_height_values)
         self.program['mat_values'].write(self.mat_values)
 
         if self.uses_normal:
-            self.normal.use(location=3)
+            self.normal.use(location=4)
 
         self.program['camPos'].write(self.camera.position)
         self.program['m_view'].write(self.camera.m_view)
@@ -208,6 +212,9 @@ class ExtendedBaseModel(BaseModel):
         self.cas2_map = self.app.mesh.texture.textures['cascade_2']
         self.program['cas2Map'] = 1
         self.cas2_map.use(location=1)
+        self.cas3_map = self.app.mesh.texture.textures['cascade_3']
+        self.program['cas3Map'] = 2
+        self.cas3_map.use(location=2)
 
         # shadow
         self.shadow_vao = self.app.mesh.vao.vaos['shadow_' + self.vao_name]
@@ -219,8 +226,8 @@ class ExtendedBaseModel(BaseModel):
 
         # textures
         self.diffuse = self.app.materials[self.tex_id].diffuse_tex
-        self.program['diff_0'] = 2
-        self.diffuse.use(location=2)
+        self.program['diff_0'] = 3
+        self.diffuse.use(location=3)
 
         #pbr values
         self.program['mat_values'].write(glm.vec2(self.app.materials[self.tex_id].roughness_value, self.app.materials[self.tex_id].metalicness_value))
@@ -229,23 +236,23 @@ class ExtendedBaseModel(BaseModel):
 
         if self.app.materials[self.tex_id].has_normal:
             self.normal = self.app.materials[self.tex_id].normal_tex
-            self.program['maps.normal_0'] = 3
-            self.normal.use(location=3)
+            self.program['maps.normal_0'] = 4
+            self.normal.use(location=4)
 
         self.program['norm_rough_metal_height_values'].write(self.app.materials[self.tex_id].norm_rough_metal_height_values)
         
         # skybox
         self.cubemap = self.app.mesh.texture.textures['irradiance']
-        self.program['u_irradiance'] = 4
-        self.cubemap.use(location=4)
+        self.program['u_irradiance'] = 5
+        self.cubemap.use(location=5)
 
         self.reflection = self.app.mesh.texture.textures['reflection']
-        self.program['u_reflection'] = 5
-        self.reflection.use(location=5)
+        self.program['u_reflection'] = 6
+        self.reflection.use(location=6)
 
         self.brdf_lut = self.app.mesh.texture.textures['brdf_lut']
-        self.program['u_brdf_lut'] = 6
-        self.brdf_lut.use(location=6)
+        self.program['u_brdf_lut'] = 7
+        self.brdf_lut.use(location=7)
 
         # mvp
         self.program['m_proj'].write(self.camera.m_proj)

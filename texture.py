@@ -86,7 +86,7 @@ class Texture:
     def __init__(self, app):
         self.app = app
         self.ctx = app.ctx
-        self.shadow_res = 1024
+        self.shadow_res = 1536
         self.textures = {}
         self.textures[0] = self.get_texture(path=f'{script_path}/textures/img.png')
         self.textures[1] = self.get_texture(path=f'{script_path}/textures/img_1.png')

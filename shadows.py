@@ -13,14 +13,6 @@ ndc_corners = [
     glm.vec4(1, 1, 1, 1)
 ]
 
-def calculate_bounding_sphere(points, center): 
-    max_distance = 0
-    for point in points:
-        distance = glm.distance(point, center)
-        max_distance = max(max_distance, distance)
-    
-    return max_distance
-
 def calculate_frustum_corners(view_matrix, proj_matrix):
     combined_matrix = proj_matrix * view_matrix
     inverse_matrix = glm.inverse(combined_matrix)
@@ -42,9 +34,9 @@ class ShadowRenderer():
 
     def render(self, rendering_cubemap = False):
         full_cascade_data = [
-            [0, 0.1, 10, 0.1, 100], # cascade number, subfrusta near
-            [1, 10, 30, -50, 100],  # subfrasta far, cascade near
-            [2, 30, 200, -100, 200]  # cascade far
+            [0, 0.1, 7.5, 0.1, 100], # cascade number, subfrusta near
+            [1, 7.45, 30, -50, 100],  # subfrasta far, cascade near
+            [2, 29.95, 100, -100, 200]  # cascade far
         ]
         for cascade_data in full_cascade_data:
             self.update_matricies(rendering_cubemap, cascade_data)

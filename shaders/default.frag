@@ -1,12 +1,16 @@
 #version 330 core
-
 layout (location = 0) out vec4 fragcolour;
+
+struct cascadeCoordinates {
+    vec4 casCoord[3];
+};
 
 in vec2 uv_0;
 in vec3 normal;
 in vec3 fragPos;
-in vec4 cas1Coord;
+in cascadeCoordinates casCoords;
 in vec4 cas2Coord;
+in vec4 cas3Coord;
 in mat3 TBN;
 
 struct Light {
@@ -36,6 +40,7 @@ uniform sampler2D diff_0;
 uniform vec3 camPos;
 uniform sampler2DShadow cas1Map;
 uniform sampler2DShadow cas2Map;
+uniform sampler2DShadow cas3Map;
 uniform vec2 shadowResolution;
 uniform vec4 norm_rough_metal_height_values;
 uniform Material maps;
@@ -47,33 +52,34 @@ const float PI = 3.14159265359;
 const float MAX_REFLECTION_LOD = 7;
 uniform int IBL_enabled;
 
-float lookup(vec4 casCoord, sampler2DShadow shadowMap, float ox, float oy) {
+float PCF(vec4 casCoord, sampler2DShadow shadowMap) {
+    float shadow;
+    float swidth = 1;
+    float endp = swidth * 1.5;
     vec2 pixelOffset = 1 / shadowResolution;
-    return textureProj(shadowMap, casCoord + vec4(ox * pixelOffset.x * casCoord.w,
-                                                     oy * pixelOffset.y * casCoord.w, 0.0, 0.0));
+
+    for (float y = -endp; y <= endp; y += swidth) {
+        for (float x = -endp; x <= endp; x += swidth) {
+            shadow += textureProj(shadowMap, casCoord + vec4(x * pixelOffset.x * casCoord.w,
+                                                     y * pixelOffset.y * casCoord.w, 0.0, 0.0));
+        }
+    }
+    return shadow;
 }
 
 float getSoftShadowX16() {
     float shadow;
     float swidth = 1;
     float endp = swidth * 1.5;
-    if (cas1Coord.x > 0.0 && cas1Coord.x < 1.0 && cas1Coord.y > 0.0 && cas1Coord.y < 1.0 && cas1Coord.z > 0.0 && cas1Coord.z < 1.0) {
-        for (float y = -endp; y <= endp; y += swidth) {
-            for (float x = -endp; x <= endp; x += swidth) {
-                shadow += lookup(cas1Coord, cas1Map, x, y);
-            }
-        }
+    if (casCoords.casCoord[0].x > 0.0 && casCoords.casCoord[0].x < 1.0 && casCoords.casCoord[0].y > 0.0 && casCoords.casCoord[0].y < 1.0 && casCoords.casCoord[0].z > 0.0 && casCoords.casCoord[0].z < 1.0) {
+        shadow = PCF(casCoords.casCoord[0], cas1Map);
+    } else if (casCoords.casCoord[1].x > 0.0 && casCoords.casCoord[1].x < 1.0 && casCoords.casCoord[1].y > 0.0 && casCoords.casCoord[1].y < 1.0 && casCoords.casCoord[1].z > 0.0 && casCoords.casCoord[1].z < 1.0) {
+        shadow = PCF(casCoords.casCoord[1], cas2Map);
+    } else if (casCoords.casCoord[2].x > 0.0 && casCoords.casCoord[2].x < 1.0 && casCoords.casCoord[2].y > 0.0 && casCoords.casCoord[2].y < 1.0 && casCoords.casCoord[2].z > 0.0 && casCoords.casCoord[2].z < 1.0) {
+        shadow = PCF(casCoords.casCoord[2], cas3Map);
     } else {
-        if (cas2Coord.x > 0.0 && cas2Coord.x < 1.0 && cas2Coord.y > 0.0 && cas2Coord.y < 1.0 && cas2Coord.z > 0.0 && cas2Coord.z < 1.0) {
-            for (float y = -endp; y <= endp; y += swidth) {
-                for (float x = -endp; x <= endp; x += swidth) {
-                    shadow += lookup(cas2Coord, cas2Map, x, y);
-                }
-            }
-        } else {
-            return 1.0;
-        }
-    }
+        return 1.0;
+    }    
     return shadow / 16;
 }
 
