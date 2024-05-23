@@ -1,0 +1,86 @@
+Make triangle                                      |X|
+Make cube                                          |X|
+Make spinning cube                                 |X|
+Camera movement                                    |X|
+Phong lighting                                     |X|
+Texturing                                          |X|
+Skybox                                             |X|
+Shadow mapping                                     |X|
+Config file                                        |X|
+Flying, walking camera                             |X|
+Add icosphere                                      |X|
+Dynamically create objects                         |X|
+Multiple lights                                    |X|
+Fix if in shadow cannot be lit                     |X|
+Light range                                        |X|
+Pbr diffuse                                        |X|
+Pbr specular                                       |X|
+Normal map                                         |X|
+Good way to pass to shader if not there an int     |X|
+Pbr metallic                                       |X|
+Pbr roughness                                      |X|
+
+if light is behind normal object normal then dont have it contribute any light
+
+Pbr texture packer                                 | |
+Assimp library for loading objects                 |X|
+Generate tangents, use tangets                     |X|
+Pbr normal texture                                 |X|
+Correct sun PBR                                    |X|
+GLFW not pygame (dont rely on pygame)              |X|
+Use imgui instead                                  |X|
+Fix shadows not working with imgui                 |X|
+Fix camera movement                                |X|
+Optimise mouse, keyboard event collector           |X|
+Make object loader, saves objects to numpy binary  |X|
+Object loader - file binary right to gpu via vbo   |X|
+Scene Heighrachy imgui                             |X|
+Properties + pos,rot,scale editing imgui           |X|
+Material viewer imgui                              |X|
+Diffuse pbr ibl                                    |X|
+Use yaml instead of json for storage               |X|
+Render to an image                                 |X|
+Convolve that image                                |X|
+Render cube map                                    |X|
+Convoluted cubemap                                 |X|
+Reflections                                        |X|
+Specular pbr ibl                                   |X|
+Correct sun setup (directional)                    |X|
+Orthographic shadows                               |X|
+Performance stats                                  |X|
+Update frustum culling and how that works          |X|
+Correct cascade (one)                              |X|
+3 cascades                                         |X|
+Shader optimisation                                |X|
+Render shadow into red channel                     | |
+Culling for shadow mapping                         | |
+Correct attenuation (learn OpenGL)                 | |
+AABB calc in object loader                         | |
+Handle light data seperate and synced              | |
+UBO or SSBO for light data                         | |
+Store material data in buffers                     | |
+Alpha object rendering                             | |
+Sort render order for overdraw                     | |
+Pbr roughness texture                              | |
+Pbr metallicness texture                           | |
+Update a texture at a specific glo id              | | --- NEEDED
+Be able to change time of day                      | |
+A sun/moon model                                   | |
+Paralax correct cubemap                            | |
+Material editor imgui                              | |
+Flip Y query in object loader                      | |
+Render a thumbnail in object loader                | |
+Directional light shadows                          |X|
+Render reflection based on Fresnel                 |X|
+Frensel factor based on roughness texture          | |
+Spot light                                         | |
+Update lights                                      |X|
+Group objects into thingy collecting m_matrix      | |
+Instance them                                      | |
+Frustum culling all planes                         |X|
+Make gui library!                                  | |
+Ambient occlusion                                  | |
+Bloom                                              | |
+Anti-Aliasing                                      | |
+Water shader                                       | |
+Particle system                                    | |
