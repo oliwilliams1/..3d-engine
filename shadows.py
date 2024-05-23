@@ -1,5 +1,6 @@
 import glm
-
+import culling
+import time
 epsilon = glm.epsilon()
 
 ndc_corners = [
@@ -39,12 +40,10 @@ class ShadowRenderer():
             [2, 29.95, 100, -100, 200]  # cascade far
         ]
         for cascade_data in full_cascade_data:
-            self.update_matricies(rendering_cubemap, cascade_data)
+            view, proj = self.update_matricies(rendering_cubemap, cascade_data)
             self.cascade_fbos[cascade_data[0]].clear()
             self.cascade_fbos[cascade_data[0]].use()
-            for obj in self.app.scene.objects.values():
-                if obj.cast_shadow:
-                    obj.render_shadow(cascade_data[0])
+            culling.render_culled(self.app.scene.objects.values(), view, proj, cast_shadow_check=True, cascade=cascade_data[0])
     
     def update_matricies(self, rendering_cubemap, cascade_data):
         light_dir = self.app.light.sun.direction
@@ -79,6 +78,8 @@ class ShadowRenderer():
                 
         self.app.light.proj_matrices[cascade] = proj
         self.app.light.view_matrices[cascade] = view
+
+        return [view, proj]
         
     def destroy(self):
         for fbo in self.cascade_fbos:

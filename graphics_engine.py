@@ -1,7 +1,7 @@
 import glfw
 import moderngl as mgl
 import sys
-from model import *
+from model import init_lights
 import camera
 from light import Light
 from mesh import Mesh
@@ -42,6 +42,7 @@ class GraphicsEngine:
         # create an object to help track time
         self.delta_time = 0
         self.time = 0
+        glfw.swap_interval(1) # v-sync on
         # light
         self.light = Light()
         init_lights() # from models.py
@@ -123,7 +124,6 @@ class GraphicsEngine:
         self.event_time = glfw.get_time() - pre_event_time
         self.render()
         self.delta_time = glfw.get_time() - self.time
-        #glfw.set_window_title(self.window, f'FPS: {1/self.delta_time:.2f}, {self.delta_time*1000:.2f}ms')
 
     def destroy(self):
         self.mesh.destroy()

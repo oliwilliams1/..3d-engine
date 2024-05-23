@@ -10,6 +10,7 @@ ndc_corners = [
     glm.vec4(-1, 1, 1, 1),
     glm.vec4(1, 1, 1, 1)
 ]
+
 obj_pos = glm.vec3(0)
 bounding_box = []
 frustum_vertices = []
@@ -85,11 +86,19 @@ def left_plane_check():
             return True
     return False
 
-def cull(objects, m_view, m_proj):
+def render_culled(objects, m_view, m_proj, cast_shadow_check: bool = False, cascade: int = 0):
     global obj_pos, bounding_box, frustum_vertices
     frustum_vertices = calculate_frustum_corners(m_view, m_proj)
     rendered_objects = 0
     for obj in objects:
+        if cast_shadow_check:
+            if obj.cast_shadow:
+                obj_pos = glm.vec3(obj.pos)
+                bounding_box = obj.bounding_box
+                if cull_test():
+                    obj.render_shadow(cascade)
+                    rendered_objects += 1
+
         obj_pos = glm.vec3(obj.pos)
         bounding_box = obj.bounding_box
         if cull_test():

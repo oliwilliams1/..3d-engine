@@ -7,8 +7,6 @@ faces = ['right', 'back', 'left', 'front', 'top', 'bottom']
 
 epsilon = glm.epsilon()
 
-
-
 def get_view_matrix(position, face):
     match face:
         case 'right':
@@ -110,5 +108,5 @@ class SceneRenderer:
         self.scene.basic_skybox.on_init() # wise, as not rendering real-time
 
     def render(self):
-        culling.cull(self.scene.objects.values(), self.app.camera.m_view, self.app.camera.m_proj)
+        culling.render_culled(self.scene.objects.values(), self.app.camera.m_view, self.app.camera.m_proj)
         self.scene.skybox.render()
