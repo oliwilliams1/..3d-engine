@@ -3,7 +3,7 @@ from imgui.integrations.glfw import GlfwRenderer
 from numpy import rad2deg, radians
 from PIL import Image
 import glm
-from glfw import get_time
+import glfw
 image = Image.open('objects/cat/20430_cat_diff_v1.jpg')
 image.resize((128, 128))
 image_data = image.convert('RGB').tobytes()
@@ -20,6 +20,11 @@ scale_step = 0.1
 
 cam_yaw = 0
 cam_pitch = 0
+
+def sum_average(list):
+    if len(list) == 0:
+        return 0
+    return sum(list) / len(list)
 
 def update_camera_vectors():
     global cam_yaw, cam_pitch
@@ -65,9 +70,19 @@ class imGuiRenderer:
         self.selected_material = 0
         self.texture_handler = app.mesh.texture
         self.light_handler = app.light
-
+        self.vsync_state = True
         self.cube_renderer = app.scene_renderer.render_cube
-
+        self.average_fps = []
+        self.avg_perf_stats = {
+            'Update': [],
+            'Shadow': [],
+            'Render': [],
+            'Skybox': [],
+            'Event': [],
+            'Imgui': [],
+            'Buffer swap': [],
+            'Delta': []
+        }
         self.tab_names = ['Materials', 'Cubemap Editor']
         self.current_tab = 0
 
@@ -107,25 +122,7 @@ class imGuiRenderer:
         imgui.image(self.texture_handler.textures['cascade_3'].glo, 275, 275)
         imgui.end()
 
-        imgui.set_next_window_position(1300, 0)
-        imgui.set_next_window_size(300, 110)
-        imgui.begin('Performance Graph')
-        update_time = self.app.update_time * 1000
-        shadow_time = self.app.shadow_time * 1000
-        render_time = self.app.render_time * 1000
-        skybox_time = self.app.skybox_time * 1000
-        event_time  = self.app.event_time  * 1000
-        imgui_time  = (get_time() - self.app.pre_imgui_time) * 1000
-        buffer_time = self.app.past_swap_buffer * 1000
-        imgui.text(f'''Update time: {update_time:.4f} ms
-Shadow time: {shadow_time:.4f} ms
-Render time: {render_time:.4f} ms
-Skybox time: {skybox_time:.4f} ms
-Event time: {event_time:.4f} ms
-Imgui time: {imgui_time:.4f} ms
-Buffer swap time: {buffer_time:.2f} ms
-Delta time: {self.app.delta_time * 1000:.2f} ms''')
-        imgui.end()
+        self.performance_stats()
 
         imgui.render()
         self.imgui_renderer.render(imgui.get_draw_data())
@@ -133,6 +130,48 @@ Delta time: {self.app.delta_time * 1000:.2f} ms''')
     def destroy(self):
         self.imgui_renderer.shutdown()
     
+    def performance_stats(self):
+        imgui.set_next_window_position(1300, 0)
+        imgui.set_next_window_size(300, 110)
+        imgui.begin('Performance Graph')
+        self.avg_perf_stats['Update'].append(self.app.update_time * 1000)
+        self.avg_perf_stats['Shadow'].append(self.app.shadow_time * 1000)
+        self.avg_perf_stats['Render'].append(self.app.render_time * 1000)
+        self.avg_perf_stats['Skybox'].append(self.app.skybox_time * 1000)
+        self.avg_perf_stats['Event'].append(self.app.event_time * 1000)
+        self.avg_perf_stats['Imgui'].append((glfw.get_time() - self.app.pre_imgui_time) * 1000)
+        self.avg_perf_stats['Buffer swap'].append(self.app.past_swap_buffer * 1000)
+        self.avg_perf_stats['Delta'].append(self.app.delta_time * 1000)
+        temp_str = ''
+        for value in self.avg_perf_stats.values():
+            if len(value) >= 20:
+                value.pop(0)
+
+        for stat_name, stat_values in self.avg_perf_stats.items():
+            if len(stat_values) >= 50:
+                stat_values.pop(0)
+            average = sum_average(stat_values)
+            temp_str += f'{stat_name} time: {average:.4f} ms\n'
+        imgui.text(temp_str)
+        imgui.columns(2)
+        imgui.set_column_width(0, 80)
+        vsync_enabled, self.vsync_state = imgui.checkbox('V-Sync', self.vsync_state)
+        if vsync_enabled:
+            glfw.swap_interval(self.vsync_state)
+
+        if self.app.delta_time > 0:
+            imgui.next_column()
+            fps = int(1 / self.app.delta_time)
+            self.average_fps.append(fps)
+        if len(self.average_fps) >= 50:
+            self.average_fps.pop(0)
+        
+        if len(self.average_fps) != 0:
+            average_fps = sum(self.average_fps) / len(self.average_fps)
+            imgui.text(f'FPS: {average_fps:.0f}')
+
+        imgui.end()
+
     def render_hierarchy(self):
         selected, _ = imgui.selectable('Sun', selected=self.selected_object[0] == '#1457Sun')
         if selected:
@@ -152,7 +191,7 @@ Delta time: {self.app.delta_time * 1000:.2f} ms''')
             imgui.next_column()
             imgui.push_item_width(-1)
             sun_rgb = self.light_handler.sun.colour
-            sun_colour_picker = imgui.color_edit3("  Colour Picker", sun_rgb[0], sun_rgb[1], sun_rgb[2])
+            sun_colour_picker = imgui.color_edit3('  Colour Picker', sun_rgb[0], sun_rgb[1], sun_rgb[2])
             if sun_colour_picker[0]:
                 self.light_handler.sun.colour = glm.vec3(sun_colour_picker[1])
             

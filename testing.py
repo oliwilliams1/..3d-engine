@@ -29,7 +29,8 @@ proj_matrix = glm.perspective(glm.radians(45.0), 16/9, 5, 20.0)
 
 frustum_verts = calculate_frustum_corners(view_matrix, proj_matrix)
 
-ortho_view = glm.lookAt(glm.vec3(0, 0, 10), glm.vec3(0, 0, 0), glm.vec3(0, 1, 0))
+print([list(i) for i in frustum_verts])
+ortho_view = glm.lookAt(glm.vec3(0, 0, 10), glm.vec3(0, 0, 0) + glm.epsilon(), glm.vec3(0, 1, 0))
 ortho_proj = glm.ortho(-20, 20, -20, 20, 0.1, 50)
 
 font = pygame.font.Font(None, 32)  # Create a font object

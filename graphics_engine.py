@@ -35,8 +35,6 @@ class GraphicsEngine:
         
         # set the OpenGL context
         glfw.make_context_current(self.window)
-        # turn vsync off
-        #glfw.swap_interval(0)
         # create an moderngl context
         self.ctx = mgl.create_context()
         self.ctx.enable(flags=mgl.DEPTH_TEST | mgl.CULL_FACE)

@@ -1,27 +1,13 @@
 from PIL import Image
 import numpy as np
 import glm
+import culling
 
 faces = ['right', 'back', 'left', 'front', 'top', 'bottom']
 
 epsilon = glm.epsilon()
 
-ndc_corners = [
-    glm.vec4(-1, -1, -1, 1),
-    glm.vec4(1, -1, -1, 1),
-    glm.vec4(-1, 1, -1, 1),
-    glm.vec4(1, 1, -1, 1),
-    glm.vec4(-1, -1, 1, 1),
-    glm.vec4(1, -1, 1, 1),
-    glm.vec4(-1, 1, 1, 1),
-    glm.vec4(1, 1, 1, 1)
-]
 
-def calculate_frustum_corners(view_matrix, proj_matrix):
-    combined_matrix = proj_matrix * view_matrix
-    inverse_matrix = glm.inverse(combined_matrix)
-    world_corners = [inverse_matrix * corner for corner in ndc_corners]
-    return [glm.vec3(corner) / corner.w for corner in world_corners]
 
 def get_view_matrix(position, face):
     match face:
@@ -123,22 +109,6 @@ class SceneRenderer:
         self.scene.skybox.on_init()       # to fix a bug, doesnt matter performance
         self.scene.basic_skybox.on_init() # wise, as not rendering real-time
 
-    def cull(self, objects):
-        m_view = self.app.camera.m_view
-        m_proj = self.app.camera.m_proj
-        frustum_vertices = calculate_frustum_corners(m_view, m_proj)
-        near_plane_normal = glm.cross(frustum_vertices[2] - frustum_vertices[1], frustum_vertices[1] - frustum_vertices[0])
-        near_plane_point = frustum_vertices[0]
-        for obj in objects:
-            obj_pos = glm.vec3(obj.pos)
-            bounding_box = obj.bounding_box
-            for corner in bounding_box:
-                if glm.dot((obj_pos + corner) - near_plane_point, near_plane_normal) > 0:
-                    obj.render()
-                    break
-            
-
-
     def render(self):
-        self.cull(self.scene.objects.values())
+        culling.cull(self.scene.objects.values(), self.app.camera.m_view, self.app.camera.m_proj)
         self.scene.skybox.render()
