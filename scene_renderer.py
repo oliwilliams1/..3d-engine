@@ -108,5 +108,7 @@ class SceneRenderer:
         self.scene.basic_skybox.on_init() # wise, as not rendering real-time
 
     def render(self):
-        culling.render_culled(self.scene.objects.values(), self.app.camera.m_view, self.app.camera.m_proj)
+        #culling.render_culled(self.scene.objects.values(), self.app.camera.m_view, self.app.camera.m_proj)
+        for obj in self.scene.objects.values():
+            obj.render()
         self.scene.skybox.render()

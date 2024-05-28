@@ -52,8 +52,10 @@ Update frustum culling and how that works          |X|
 Correct cascade (one)                              |X|
 3 cascades                                         |X|
 Shader optimisation                                |X|
-Render shadow into red channel                     | |
-Culling for shadow mapping                         | |
+Culling for shadow mapping                         |X|
+C++/c/c# library for culling bc python on vacation | |
+Vectorize stuff, clip space checks
+https://bruop.github.io/frustum_culling/           | |
 Correct attenuation (learn OpenGL)                 | |
 AABB calc in object loader                         | |
 Handle light data seperate and synced              | |

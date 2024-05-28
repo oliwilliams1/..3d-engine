@@ -43,7 +43,9 @@ class ShadowRenderer():
             view, proj = self.update_matricies(rendering_cubemap, cascade_data)
             self.cascade_fbos[cascade_data[0]].clear()
             self.cascade_fbos[cascade_data[0]].use()
-            culling.render_culled(self.app.scene.objects.values(), view, proj, cast_shadow_check=True, cascade=cascade_data[0])
+            #culling.render_culled(self.app.scene.objects.values(), view, proj, cast_shadow_check=True, cascade=cascade_data[0])
+            for obj in self.app.scene.objects.values():
+                obj.render()
     
     def update_matricies(self, rendering_cubemap, cascade_data):
         light_dir = self.app.light.sun.direction
